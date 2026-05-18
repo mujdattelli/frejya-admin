@@ -1,0 +1,73 @@
+import { useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { RolesSection } from '../sections/RolesSection';
+import { PhotosSection } from '../sections/PhotosSection';
+import { HistorySection } from '../sections/HistorySection';
+import { SupportSection } from '../sections/SupportSection';
+import { ReportsSection } from '../sections/ReportsSection';
+import { SettingsSection } from '../sections/SettingsSection';
+import { ApiMonitorSection } from '../sections/ApiMonitorSection';
+
+export const SECTIONS = [
+  { key: 'photos', label: 'Fotoğraf Onayı', color: '#C0A080' },
+  { key: 'support', label: 'İstekler', color: '#14B8A6' },
+  { key: 'reports', label: 'Şikayetler', color: '#EF4444' },
+  { key: 'roles', label: 'Yetkiler & Premium', color: '#C0A080' },
+  { key: 'history', label: 'Karar Geçmişi', color: '#F59E0B' },
+  { key: 'settings', label: 'Ayarlar', color: '#10B981' },
+  { key: 'api', label: 'API İzleme', color: '#A855F7' },
+] as const;
+
+type SectionKey = (typeof SECTIONS)[number]['key'];
+
+export function Dashboard({ email }: { email: string }) {
+  const [active, setActive] = useState<SectionKey>('roles');
+  const meta = SECTIONS.find((s) => s.key === active)!;
+
+  return (
+    <div className="min-h-screen flex">
+      <aside className="w-60 bg-card border-r border-white/10 flex flex-col">
+        <div className="p-5 border-b border-white/10">
+          <h1 className="text-xl font-serif text-primary">Frejya</h1>
+          <p className="text-white/40 text-xs">Yönetim Paneli</p>
+        </div>
+        <nav className="flex-1 p-3 flex flex-col gap-1">
+          {SECTIONS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setActive(s.key)}
+              className={`text-left px-4 py-2.5 rounded-lg text-sm transition-colors ${
+                active === s.key ? 'bg-white/10 font-bold' : 'text-white/60 hover:bg-white/5'
+              }`}
+              style={active === s.key ? { color: s.color } : undefined}
+            >
+              {s.label}
+            </button>
+          ))}
+        </nav>
+        <div className="p-3 border-t border-white/10">
+          <p className="text-white/30 text-[11px] mb-2 truncate">{email}</p>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="w-full border border-white/15 rounded-lg py-2 text-xs text-white/70 hover:bg-white/5"
+          >
+            Çıkış Yap
+          </button>
+        </div>
+      </aside>
+
+      <main className="flex-1 p-8 overflow-auto">
+        <h2 className="text-2xl font-serif mb-5" style={{ color: meta.color }}>
+          {meta.label}
+        </h2>
+        {active === 'photos' && <PhotosSection />}
+        {active === 'support' && <SupportSection />}
+        {active === 'reports' && <ReportsSection />}
+        {active === 'roles' && <RolesSection />}
+        {active === 'history' && <HistorySection />}
+        {active === 'settings' && <SettingsSection />}
+        {active === 'api' && <ApiMonitorSection />}
+      </main>
+    </div>
+  );
+}
