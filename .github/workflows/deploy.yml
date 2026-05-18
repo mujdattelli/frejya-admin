@@ -27,7 +27,9 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
-      - run: npm ci
+      # npm ci yerine npm install — package-lock.json Windows'ta uretildi,
+      # CI Linux; npm install platforma ozgu (rollup) ikilileri dogru cozer.
+      - run: npm install
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
