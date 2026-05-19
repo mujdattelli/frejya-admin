@@ -1,9 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// GitHub Pages project site: site `mujdattelli.github.io/frejya-admin/` altinda
-// yayinlanir; bu yuzden base path repo adiyla ('/frejya-admin/') ayarlanir.
+// Ozel domain admin.frejya.app kokunde yayinlanir — base path '/'.
 export default defineConfig({
-  base: '/frejya-admin/',
+  base: '/',
   plugins: [react()],
 });
