@@ -57,9 +57,17 @@ export function Dashboard({ email }: { email: string }) {
       </aside>
 
       <main className="flex-1 p-8 overflow-auto">
-        <h2 className="text-2xl font-serif mb-5" style={{ color: meta.color }}>
-          {meta.label}
-        </h2>
+        <div className="flex items-center justify-between mb-5 gap-4">
+          <h2 className="text-2xl font-serif" style={{ color: meta.color }}>
+            {meta.label}
+          </h2>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="shrink-0 border border-white/15 rounded-lg px-4 py-2 text-xs text-white/70 hover:bg-white/5"
+          >
+            Çıkış Yap
+          </button>
+        </div>
         {active === 'photos' && <PhotosSection />}
         {active === 'support' && <SupportSection />}
         {active === 'reports' && <ReportsSection />}
