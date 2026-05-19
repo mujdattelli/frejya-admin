@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// GitHub Pages proje sitesi: mujdattelli.github.io/frejya-admin/ altinda yayinlanir.
+// admin.frejya.app ozel alan adi (kok dizinde yayinlanir).
 export default defineConfig({
-  base: '/frejya-admin/',
+  base: '/',
   plugins: [react()],
 });
