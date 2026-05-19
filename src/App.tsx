@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { Login } from './components/Login';
+import { MfaGate } from './components/MfaGate';
 import { Dashboard } from './components/Dashboard';
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [mfaOk, setMfaOk] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,31 +20,41 @@ export default function App() {
       setSession(s);
       if (!s) {
         setRole(null);
+        setMfaOk(false);
         setLoading(false);
       }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Oturum açıldığında master rolünü doğrula — yetki kontrolü.
+  // Oturum açıldığında: 2FA durumu (AAL) + master rolü doğrulanır.
   useEffect(() => {
     if (!session) return;
     setLoading(true);
-    supabase
-      .from('private_users')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
-      .then(({ data }) => {
-        setRole((data as { role?: string } | null)?.role ?? null);
-        setLoading(false);
-      });
+    (async () => {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      setMfaOk(aal?.currentLevel === 'aal2');
+      const { data: prof } = await supabase
+        .from('private_users')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+      setRole((prof as { role?: string } | null)?.role ?? null);
+      setLoading(false);
+    })();
   }, [session]);
+
+  // MFA doğrulaması (kayıt ya da kod) tamamlanınca oturum AAL2 olur.
+  const handleMfaVerified = async () => {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    setMfaOk(aal?.currentLevel === 'aal2');
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-white/40">Yükleniyor…</div>;
   }
   if (!session) return <Login />;
+  if (!mfaOk) return <MfaGate onVerified={handleMfaVerified} />;
   if (role !== 'master') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4 text-center">
