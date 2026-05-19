@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Ozel domain admin.frejya.app kokunde yayinlanir — base path '/'.
+// GitHub Pages proje sitesi: mujdattelli.github.io/frejya-admin/ altinda yayinlanir.
 export default defineConfig({
-  base: '/',
+  base: '/frejya-admin/',
   plugins: [react()],
 });
