@@ -25,18 +25,27 @@ export function Dashboard({ email }: { email: string }) {
   const meta = SECTIONS.find((s) => s.key === active)!;
 
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-60 bg-card border-r border-white/10 flex flex-col">
-        <div className="p-5 border-b border-white/10">
-          <h1 className="text-xl font-serif text-primary">Frejya</h1>
-          <p className="text-white/40 text-xs">Yönetim Paneli</p>
+    <div className="min-h-screen flex flex-col md:flex-row">
+      <aside className="md:w-60 bg-card border-b md:border-b-0 md:border-r border-white/10 flex flex-col">
+        <div className="p-4 md:p-5 border-b border-white/10 flex items-center justify-between md:block">
+          <div>
+            <h1 className="text-xl font-serif text-primary">Frejya</h1>
+            <p className="text-white/40 text-xs">Yönetim Paneli</p>
+          </div>
+          {/* Mobilde çıkış butonu üst başlıkta — masaüstünde alt köşede. */}
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="md:hidden shrink-0 border border-white/15 rounded-lg px-3 py-1.5 text-xs text-white/70 hover:bg-white/5"
+          >
+            Çıkış
+          </button>
         </div>
-        <nav className="flex-1 p-3 flex flex-col gap-1">
+        <nav className="flex md:flex-col gap-1 p-2 md:p-3 overflow-x-auto">
           {SECTIONS.map((s) => (
             <button
               key={s.key}
               onClick={() => setActive(s.key)}
-              className={`text-left px-4 py-2.5 rounded-lg text-sm transition-colors ${
+              className={`text-left shrink-0 whitespace-nowrap px-4 py-2.5 rounded-lg text-sm transition-colors ${
                 active === s.key ? 'bg-white/10 font-bold' : 'text-white/60 hover:bg-white/5'
               }`}
               style={active === s.key ? { color: s.color } : undefined}
@@ -45,7 +54,7 @@ export function Dashboard({ email }: { email: string }) {
             </button>
           ))}
         </nav>
-        <div className="p-3 border-t border-white/10">
+        <div className="hidden md:block p-3 border-t border-white/10 mt-auto">
           <p className="text-white/30 text-[11px] mb-2 truncate">{email}</p>
           <button
             onClick={() => supabase.auth.signOut()}
@@ -56,14 +65,14 @@ export function Dashboard({ email }: { email: string }) {
         </div>
       </aside>
 
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 p-4 md:p-8 overflow-auto">
         <div className="flex items-center justify-between mb-5 gap-4">
-          <h2 className="text-2xl font-serif" style={{ color: meta.color }}>
+          <h2 className="text-xl md:text-2xl font-serif" style={{ color: meta.color }}>
             {meta.label}
           </h2>
           <button
             onClick={() => supabase.auth.signOut()}
-            className="shrink-0 border border-white/15 rounded-lg px-4 py-2 text-xs text-white/70 hover:bg-white/5"
+            className="hidden md:block shrink-0 border border-white/15 rounded-lg px-4 py-2 text-xs text-white/70 hover:bg-white/5"
           >
             Çıkış Yap
           </button>
