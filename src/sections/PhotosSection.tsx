@@ -17,14 +17,12 @@ export function PhotosSection() {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
 
+  // Foto-moderasyon kolonları private_users'da; ayrıca RLS admin'in başka
+  // kullanıcının satırını güncellemesine izin vermez. Liste + karar bu yüzden
+  // master-only SECURITY DEFINER RPC'ler üzerinden yapılır.
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('public_profiles')
-      .select('id, profile_picture_url, profile_picture_status, photo_rejection_count, last_photo_update_timestamp, created_at')
-      .in('profile_picture_status', ['PENDING', 'needs_manual_review'])
-      .order('created_at', { ascending: false })
-      .limit(60);
+    const { data, error } = await supabase.rpc('rpc_admin_list_pending_photos');
     setLoading(false);
     if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
     setPhotos((data as PendingPhoto[]) || []);
@@ -36,38 +34,20 @@ export function PhotosSection() {
     if (!isApproved && !window.confirm('Bu fotoğraf reddedilsin mi?')) return;
     setBusy(p.id); setMsg('');
     try {
-      let rejCount = p.photo_rejection_count || 0;
-      const updateData: Record<string, unknown> = {
-        profile_picture_status: isApproved ? 'APPROVED' : 'REJECTED',
-        last_photo_update_timestamp: Date.now(),
-        evaluated_by: 'ADMIN',
-        evaluated_at: new Date().toISOString(),
-      };
-      if (isApproved) {
-        updateData.attractiveness_level = 7;
-        updateData.photo_rejection_count = 0;
-        updateData.banned_until = null;
-      } else {
-        rejCount += 1;
-        updateData.photo_rejection_count = rejCount;
-        if (rejCount >= 5) updateData.banned_until = Date.now() + 7 * 24 * 60 * 60 * 1000;
-      }
-      const { error } = await supabase.from('public_profiles').update(updateData).eq('id', p.id);
+      const { data, error } = await supabase.rpc('rpc_admin_decide_photo', {
+        p_user_id: p.id,
+        p_approved: isApproved,
+      });
       if (error) { setMsg('Hata: ' + error.message); setBusy(null); return; }
+      const result = (data as { rejection_count: number; locked: boolean }) || { rejection_count: 0, locked: false };
 
       try {
         await supabase.rpc('rpc_log_audit_event', {
           p_action_type: isApproved ? 'PHOTO_APPROVED' : 'PHOTO_REJECTED',
           p_target_id: p.id,
-          p_details: { evaluator: 'ADMIN', rejection_count: isApproved ? 0 : rejCount, locked: !isApproved && rejCount >= 5 },
+          p_details: { evaluator: 'ADMIN', rejection_count: result.rejection_count, locked: result.locked },
         });
       } catch { /* audit log opsiyonel — ana işlemi bozmaz */ }
-
-      await supabase.from('system_notifications').insert(
-        isApproved
-          ? { user_id: p.id, title: '🎉 Profiliniz Onaylandı!', message: 'Aramıza hoş geldiniz! Hemen keşfetmeye başlayabilirsiniz.', is_read: false }
-          : { user_id: p.id, title: '⚠️ Fotoğrafınız Reddedildi', message: rejCount >= 5 ? '1 hafta boyunca hesabınız kilitlendi.' : `Kurallara uygun değil. Kalan Hakkınız: ${5 - rejCount}`, is_read: false }
-      );
 
       setPhotos((prev) => prev.filter((x) => x.id !== p.id));
       setMsg(isApproved ? 'Fotoğraf onaylandı.' : 'Fotoğraf reddedildi.');
