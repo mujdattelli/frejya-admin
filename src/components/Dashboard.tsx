@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { RolesSection } from '../sections/RolesSection';
 import { PhotosSection } from '../sections/PhotosSection';
@@ -23,6 +23,23 @@ type SectionKey = (typeof SECTIONS)[number]['key'];
 export function Dashboard({ email }: { email: string }) {
   const [active, setActive] = useState<SectionKey>('roles');
   const meta = SECTIONS.find((s) => s.key === active)!;
+
+  // 1 dakika hareketsiz kalınca otomatik çıkış (açık unutulan oturum riski).
+  useEffect(() => {
+    const IDLE_MS = 60_000;
+    let timerId: ReturnType<typeof setTimeout>;
+    const reset = () => {
+      clearTimeout(timerId);
+      timerId = setTimeout(() => supabase.auth.signOut(), IDLE_MS);
+    };
+    const events: (keyof WindowEventMap)[] = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      clearTimeout(timerId);
+      events.forEach((e) => window.removeEventListener(e, reset));
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
