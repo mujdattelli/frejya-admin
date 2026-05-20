@@ -24,9 +24,9 @@ export function Dashboard({ email }: { email: string }) {
   const [active, setActive] = useState<SectionKey>('roles');
   const meta = SECTIONS.find((s) => s.key === active)!;
 
-  // 1 dakika hareketsiz kalınca otomatik çıkış (açık unutulan oturum riski).
+  // 5 dakika hareketsiz kalınca otomatik çıkış (açık unutulan oturum riski).
   useEffect(() => {
-    const IDLE_MS = 60_000;
+    const IDLE_MS = 5 * 60_000;
     let timerId: ReturnType<typeof setTimeout>;
     const reset = () => {
       clearTimeout(timerId);
