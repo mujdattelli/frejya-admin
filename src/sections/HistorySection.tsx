@@ -19,13 +19,23 @@ export function HistorySection() {
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
 
+  const load = async () => {
+    const { data, error } = await supabase.rpc('rpc_admin_list_photo_history');
+    setLoading(false);
+    if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
+    setItems((data as HistoryItem[]) || []);
+  };
+
   useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase.rpc('rpc_admin_list_photo_history');
-      setLoading(false);
-      if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
-      setItems((data as HistoryItem[]) || []);
-    })();
+    load();
+    // Realtime: yeni bir karar verildiğinde geçmiş listesi F5 olmadan tazelensin.
+    const channel = supabase
+      .channel('admin-history-section')
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'public_profiles' },
+        () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;

@@ -28,7 +28,22 @@ export function PhotosSection() {
     setPhotos((data as PendingPhoto[]) || []);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // Realtime: bir foto onaylanır/reddedilir veya yeni PENDING gelirse listeyi
+    // F5 olmadan tazele. Tek admin senaryosunda bile karar verince diğer
+    // sekmeye geçmeden ekranın canlı kalması için.
+    const channel = supabase
+      .channel('admin-photos-section')
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'public_profiles' },
+        () => load())
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'public_profiles' },
+        () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const decide = async (p: PendingPhoto, isApproved: boolean) => {
     if (!isApproved && !window.confirm('Bu fotoğraf reddedilsin mi?')) return;
