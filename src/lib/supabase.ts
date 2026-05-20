@@ -17,11 +17,17 @@ if (!url || !anonKey) {
 // işlemi doğrudan çalıştıran geçişli bir fonksiyonla değiştiriyoruz.
 const passthroughLock = <R,>(_name: string, _timeout: number, fn: () => Promise<R>): Promise<R> => fn();
 
+// Oturumu sessionStorage'a yaz (localStorage değil): tarayıcı sekmesi
+// kapanınca tarayıcı bunu otomatik siler → bir daha açıldığında şifre ister.
+// Sayfa yenilemede (F5) oturum korunur (sessionStorage refresh'i tolere eder).
+// Sekme açıkken 5 dk hareketsizlikte logout zaten Dashboard'da var; bu ikisi
+// birlikte: açık unutulan oturum ve uzun süre kullanılmayan oturum kapanır.
 export const supabase = createClient(url, anonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
+    storage: window.sessionStorage,
     lock: passthroughLock,
   },
 });
