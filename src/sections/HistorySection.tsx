@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Karar Geçmişi — onaylanmış / reddedilmiş fotoğraflar (salt okunur).
+// Veriler birden çok tablodan geldiği (public_profiles + audit_logs +
+// private_users) ve cross-user RLS engellediği için master-only RPC kullanır.
 type HistoryItem = {
   id: string;
   profile_picture_url: string | null;
   profile_picture_status: string;
-  evaluated_by: string | null;
-  evaluated_at: string | null;
+  evaluator: string | null;
+  decided_at: string | null;
   ai_rejection_reason: string | null;
   created_at: string | null;
 };
@@ -19,12 +21,7 @@ export function HistorySection() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from('public_profiles')
-        .select('id, profile_picture_url, profile_picture_status, evaluated_by, evaluated_at, ai_rejection_reason, created_at')
-        .in('profile_picture_status', ['APPROVED', 'REJECTED'])
-        .order('created_at', { ascending: false })
-        .limit(60);
+      const { data, error } = await supabase.rpc('rpc_admin_list_photo_history');
       setLoading(false);
       if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
       setItems((data as HistoryItem[]) || []);
@@ -39,8 +36,8 @@ export function HistorySection() {
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {items.map((h) => {
         const approved = h.profile_picture_status === 'APPROVED';
-        const evaluator = h.evaluated_by || '—';
-        const dateStr = h.evaluated_at || h.created_at;
+        const evaluator = h.evaluator || 'AI';
+        const dateStr = h.decided_at || h.created_at;
         return (
           <div key={h.id} className="bg-card rounded-xl p-3 border" style={{ borderColor: approved ? '#10B98150' : '#EF444450' }}>
             <div className="flex justify-between items-center mb-2">
