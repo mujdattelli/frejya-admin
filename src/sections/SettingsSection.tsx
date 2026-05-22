@@ -2,13 +2,12 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, StatusMessage } from '../components/ui';
 
-// Ayarlar — dinamik AI API anahtarları (ücretsiz/ücretli) + global kotalar.
+// Ayarlar — dinamik AI API anahtarları (ücretsiz/ücretli).
 type ApiKey = { key: string; status?: string; usage_count?: number; limit?: number; [k: string]: unknown };
 
 export function SettingsSection() {
   const [freeKeys, setFreeKeys] = useState<ApiKey[]>([]);
   const [paidKeys, setPaidKeys] = useState<ApiKey[]>([]);
-  const [limits, setLimits] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -26,20 +25,16 @@ export function SettingsSection() {
   const load = async () => {
     setLoading(true);
     const { data: keys } = await supabase.from('system_settings').select('*').eq('id', 'api_keys').single();
-    const { data: lim } = await supabase.from('system_settings').select('*').eq('id', 'api_keys_global_limits').single();
     const k = keys as any;
     setFreeKeys(Array.isArray(k?.free_keys) ? k.free_keys.map(normKey) : []);
     setPaidKeys(Array.isArray(k?.paid_keys) ? k.paid_keys.map(normKey) : []);
-    setLimits((lim as any) || {});
     setLoading(false);
   };
 
   const normKey = (k: any): ApiKey =>
     typeof k === 'string' ? { key: k, status: 'active', usage_count: 0, limit: 100 } : k;
 
-  // Kaydetme master-only RPC'lerden geçer — ham upsert worker sayaçlarını /
-  // scraper alanlarını eziyordu (yarış durumu). RPC satırı kilitler, yalnız
-  // admin'in düzenlediği alanları yazar; worker/scraper alanlarını korur.
+  // Kaydetme master-only RPC'den geçer — ham upsert worker sayaçlarını eziyordu.
   const saveKeys = async () => {
     setSaving(true); setMsg('');
     const { data, error } = await supabase.rpc('rpc_admin_save_api_keys', {
@@ -48,24 +43,12 @@ export function SettingsSection() {
     });
     setSaving(false);
     if (error) { setMsg('Hata: ' + error.message); return; }
-    // RPC birleştirilmiş (worker sayaçları korunmuş) listeyi döner — state'i tazele.
     const d = data as any;
     if (d) {
       setFreeKeys(Array.isArray(d.free_keys) ? d.free_keys.map(normKey) : []);
       setPaidKeys(Array.isArray(d.paid_keys) ? d.paid_keys.map(normKey) : []);
     }
     setMsg('API anahtarları kaydedildi.');
-  };
-
-  const saveLimits = async () => {
-    setSaving(true); setMsg('');
-    const { error } = await supabase.rpc('rpc_admin_save_global_limits', {
-      p_rpm: parseInt(limits.gemini_rpm_limit) || 0,
-      p_tpm: parseInt(limits.gemini_tpm_limit) || 0,
-      p_rpd: parseInt(limits.gemini_rpd_limit) || 0,
-    });
-    setSaving(false);
-    setMsg(error ? 'Hata: ' + error.message : 'Kotalar kaydedildi.');
   };
 
   if (loading) return <Loading />;
@@ -119,38 +102,6 @@ export function SettingsSection() {
         </button>
       </div>
 
-      <div className="bg-card rounded-xl p-5 border border-white/5">
-        <h3 className="font-bold mb-1">Gemini Kotaları — Manuel Giriş</h3>
-        <p className="text-white/40 text-[11px] mb-4">
-          Bu değerler normalde Google'ın resmi sayfasından otomatik çekilir
-          (API İzleme → Gemini Kotaları). Google sayfa yapısını değiştirip
-          otomatik çekme bozulursa, kotaları buradan <b>elle</b> girersiniz.
-          Gemini'de yalnızca <b>dakikalık (RPM/TPM)</b> ve <b>günlük (RPD)</b>
-          kota vardır — haftalık/aylık kota yoktur.
-        </p>
-        {([
-          ['gemini_rpm_limit', 'Dakikalık İstek — RPM', 'Anahtar başına 60 saniyede yapılabilecek API çağrısı sayısı.'],
-          ['gemini_tpm_limit', 'Dakikalık Token — TPM', '60 saniyede işlenebilecek toplam token (girdi + çıktı).'],
-          ['gemini_rpd_limit', 'Günlük İstek — RPD', 'Anahtar başına 24 saatte yapılabilecek API çağrısı (gece yarısı Pasifik saatinde sıfırlanır).'],
-        ] as [string, string, string][]).map(([key, label, desc]) => (
-          <div key={key} className="mb-3">
-            <div className="flex justify-between items-center gap-3">
-              <span className="text-white/70 text-xs">{label}</span>
-              <input
-                type="number"
-                value={limits[key] ?? ''}
-                onChange={(e) => setLimits({ ...limits, [key]: parseInt(e.target.value) || 0 })}
-                className="bg-black/50 border border-white/20 rounded px-2 py-1 w-28 text-right text-xs outline-none shrink-0"
-              />
-            </div>
-            <p className="text-white/35 text-[10px] mt-0.5">{desc}</p>
-          </div>
-        ))}
-        <button onClick={saveLimits} disabled={saving}
-          className="w-full mt-2 bg-blue-500/20 border border-blue-500/40 text-blue-400 font-bold rounded-lg py-2.5 text-sm disabled:opacity-50">
-          {saving ? 'Kaydediliyor…' : 'Kotaları Kaydet'}
-        </button>
-      </div>
     </div>
   );
 }
