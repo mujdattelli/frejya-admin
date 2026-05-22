@@ -38,16 +38,16 @@ export function ApiMonitorSection() {
   return (
     <div className="max-w-2xl">
       <div className="bg-card rounded-xl p-5 border-l-4 border-purple-500 border-y border-r border-white/5 mb-4">
-        <h3 className="font-bold mb-3">Gemini Kotaları</h3>
-        <p className="text-white/50 text-xs mb-1">
-          Son güncelleme: {limits.last_scraped_at ? new Date(limits.last_scraped_at).toLocaleString('tr-TR') : '—'}
+        <h3 className="font-bold mb-2">Gemini Kotaları</h3>
+        {/* Google, Free tier RPM/TPM/RPD değerlerini artık herkese açık
+            rate-limits sayfasında YAYINLAMIYOR — yalnız giriş yapılmış AI
+            Studio panelinde görünüyor. Bu yüzden otomatik çekme (scraper)
+            mümkün değil; değerler Ayarlar → Gemini Kotaları'ndan manuel girilir. */}
+        <p className="text-white/40 text-[11px] mb-3 leading-relaxed">
+          Bu değerler <b>Google AI Studio</b> panelinden görülüp <b>Ayarlar →
+          Gemini Kotaları</b>'ndan manuel girilir. (Google bu kotaları artık
+          herkese açık bir sayfada yayınlamadığı için otomatik çekme yoktur.)
         </p>
-        <p className="text-white/50 text-xs mb-3">
-          Durum: <span className={limits.scrape_status === 'success' ? 'text-emerald-400' : 'text-red-400'}>{limits.scrape_status || '—'}</span>
-        </p>
-        {/* Gemini API kotaları — gerçek dönemler: RPM/TPM (dakikalık) + RPD
-            (günlük). Haftalık/aylık YOKtur. Değerler scraper'dan veya Ayarlar'dan
-            manuel girilir. (Beğeni/yorum kullanıcı davranış limiti — burada değil.) */}
         <div className="grid grid-cols-1 gap-2 text-xs">
           <Stat label="Dakikalık İstek (RPM)" value={limits.gemini_rpm_limit}
             desc="Anahtar başına 60 saniyede yapılabilecek API çağrısı." />
