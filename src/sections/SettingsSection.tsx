@@ -12,6 +12,14 @@ export function SettingsSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  // Açık (maskesi kaldırılmış) anahtarlar — varsayılan hepsi maskeli.
+  const [revealed, setRevealed] = useState<Set<string>>(new Set());
+  const toggleReveal = (id: string) =>
+    setRevealed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
 
   useEffect(() => { load(); }, []);
 
@@ -62,8 +70,8 @@ export function SettingsSection() {
 
   if (loading) return <Loading />;
 
-  const KeyList = ({ list, setList, color, label }: {
-    list: ApiKey[]; setList: (v: ApiKey[]) => void; color: string; label: string;
+  const KeyList = ({ list, setList, color, label, kind }: {
+    list: ApiKey[]; setList: (v: ApiKey[]) => void; color: string; label: string; kind: string;
   }) => (
     <div className="mb-6">
       <div className="flex justify-between items-center mb-2">
@@ -72,17 +80,28 @@ export function SettingsSection() {
           className="rounded px-2 py-0.5 text-lg leading-none" style={{ background: color + '22', color }}>+</button>
       </div>
       {list.length === 0 && <p className="text-white/40 text-xs italic">Anahtar yok.</p>}
-      {list.map((k, i) => (
-        <div key={i} className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1.5 mb-2 border border-white/10">
-          <input
-            value={k.key}
-            onChange={(e) => { const n = [...list]; n[i] = { ...n[i], key: e.target.value }; setList(n); }}
-            placeholder="API anahtarı"
-            className="flex-1 bg-transparent text-primary font-mono text-xs outline-none py-1.5"
-          />
-          <button onClick={() => setList(list.filter((_, x) => x !== i))} className="text-red-400 text-xs">Sil</button>
-        </div>
-      ))}
+      {list.map((k, i) => {
+        const id = `${kind}-${i}`;
+        const shown = revealed.has(id);
+        return (
+          <div key={i} className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1.5 mb-2 border border-white/10">
+            {/* Anahtarlar varsayılan maskeli — omuz sörfü / ekran paylaşımı
+                sızıntısına karşı. "Göster" ile geçici olarak açılır. */}
+            <input
+              type={shown ? 'text' : 'password'}
+              autoComplete="off"
+              value={k.key}
+              onChange={(e) => { const n = [...list]; n[i] = { ...n[i], key: e.target.value }; setList(n); }}
+              placeholder="API anahtarı"
+              className="flex-1 bg-transparent text-primary font-mono text-xs outline-none py-1.5"
+            />
+            <button onClick={() => toggleReveal(id)} className="text-white/50 text-xs shrink-0">
+              {shown ? 'Gizle' : 'Göster'}
+            </button>
+            <button onClick={() => setList(list.filter((_, x) => x !== i))} className="text-red-400 text-xs shrink-0">Sil</button>
+          </div>
+        );
+      })}
     </div>
   );
 
@@ -92,8 +111,8 @@ export function SettingsSection() {
 
       <div className="bg-card rounded-xl p-5 border-l-4 border-emerald-500 border-y border-r border-white/5 mb-4">
         <h3 className="font-bold mb-4">Dinamik API Anahtarı Yönetimi</h3>
-        <KeyList list={freeKeys} setList={setFreeKeys} color="#10B981" label="Ücretsiz Anahtarlar" />
-        <KeyList list={paidKeys} setList={setPaidKeys} color="#EF4444" label="Ücretli Anahtarlar" />
+        <KeyList list={freeKeys} setList={setFreeKeys} color="#10B981" label="Ücretsiz Anahtarlar" kind="free" />
+        <KeyList list={paidKeys} setList={setPaidKeys} color="#EF4444" label="Ücretli Anahtarlar" kind="paid" />
         <button onClick={saveKeys} disabled={saving}
           className="w-full bg-emerald-500 text-black font-bold rounded-lg py-2.5 text-sm disabled:opacity-50">
           {saving ? 'Kaydediliyor…' : 'Anahtarları Kaydet'}
