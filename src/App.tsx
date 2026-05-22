@@ -85,7 +85,9 @@ export default function App() {
     );
   }
   if (!session) return <Login />;
-  if (role !== 'master') {
+  // Panele master VE moderator girebilir. Moderatör kısıtlı sekme görür
+  // (Yetkiler/Ayarlar/API hariç) — kısıtlama Dashboard'da + sunucu RPC'lerinde.
+  if (role !== 'master' && role !== 'moderator') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4 text-center">
         <p className="text-red-400">Bu hesabın yönetim paneline erişim yetkisi yok.</p>
@@ -98,5 +100,5 @@ export default function App() {
       </div>
     );
   }
-  return <Dashboard email={session.user.email ?? ''} />;
+  return <Dashboard email={session.user.email ?? ''} role={role} />;
 }

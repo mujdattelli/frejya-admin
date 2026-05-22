@@ -7,22 +7,30 @@ import { SupportSection } from '../sections/SupportSection';
 import { ReportsSection } from '../sections/ReportsSection';
 import { SettingsSection } from '../sections/SettingsSection';
 import { ApiMonitorSection } from '../sections/ApiMonitorSection';
+import { OverviewSection } from '../sections/OverviewSection';
+import { BannedSection } from '../sections/BannedSection';
 
+// masterOnly: yalnız master görür. Moderatör bu sekmeleri görmez ve
+// ilgili RPC'ler sunucuda da moderatöre kapalıdır (çift katman).
 export const SECTIONS = [
+  { key: 'overview', label: 'Genel Bakış', color: '#60A5FA' },
   { key: 'photos', label: 'Fotoğraf Onayı', color: '#C0A080' },
   { key: 'support', label: 'İstekler', color: '#14B8A6' },
   { key: 'reports', label: 'Şikayetler', color: '#EF4444' },
-  { key: 'roles', label: 'Yetkiler & Premium', color: '#C0A080' },
+  { key: 'roles', label: 'Yetkiler & Premium', color: '#C0A080', masterOnly: true },
+  { key: 'banned', label: 'Banlılar', color: '#F59E0B' },
   { key: 'history', label: 'Karar Geçmişi', color: '#F59E0B' },
-  { key: 'settings', label: 'Ayarlar', color: '#10B981' },
-  { key: 'api', label: 'API İzleme', color: '#A855F7' },
+  { key: 'settings', label: 'Ayarlar', color: '#10B981', masterOnly: true },
+  { key: 'api', label: 'API İzleme', color: '#A855F7', masterOnly: true },
 ] as const;
 
 type SectionKey = (typeof SECTIONS)[number]['key'];
 
-export function Dashboard({ email }: { email: string }) {
-  const [active, setActive] = useState<SectionKey>('roles');
-  const meta = SECTIONS.find((s) => s.key === active)!;
+export function Dashboard({ email, role }: { email: string; role: string }) {
+  // Moderatör master-only sekmeleri görmez.
+  const sections = SECTIONS.filter((s) => role === 'master' || !('masterOnly' in s && s.masterOnly));
+  const [active, setActive] = useState<SectionKey>('overview');
+  const meta = sections.find((s) => s.key === active) ?? sections[0];
 
   // 5 dakika hareketsiz kalınca otomatik çıkış (açık unutulan oturum riski).
   useEffect(() => {
@@ -58,7 +66,7 @@ export function Dashboard({ email }: { email: string }) {
           </button>
         </div>
         <nav className="flex md:flex-col gap-1 p-2 md:p-3 overflow-x-auto">
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <button
               key={s.key}
               onClick={() => setActive(s.key)}
@@ -94,13 +102,15 @@ export function Dashboard({ email }: { email: string }) {
             Çıkış Yap
           </button>
         </div>
+        {active === 'overview' && <OverviewSection />}
         {active === 'photos' && <PhotosSection />}
         {active === 'support' && <SupportSection />}
         {active === 'reports' && <ReportsSection />}
-        {active === 'roles' && <RolesSection />}
+        {active === 'roles' && role === 'master' && <RolesSection />}
+        {active === 'banned' && <BannedSection />}
         {active === 'history' && <HistorySection />}
-        {active === 'settings' && <SettingsSection />}
-        {active === 'api' && <ApiMonitorSection />}
+        {active === 'settings' && role === 'master' && <SettingsSection />}
+        {active === 'api' && role === 'master' && <ApiMonitorSection />}
       </main>
     </div>
   );

@@ -44,11 +44,11 @@ export function ApiMonitorSection() {
         <p className="text-white/50 text-xs mb-3">
           Durum: <span className={limits.scrape_status === 'success' ? 'text-emerald-400' : 'text-red-400'}>{limits.scrape_status || '—'}</span>
         </p>
+        {/* Yalnız Gemini API kotaları — günlük beğeni/yorum kullanıcı davranış
+            limitidir, API izlemeyle alakası yok, buradan kaldırıldı. */}
         <div className="grid grid-cols-2 gap-2 text-xs">
           <Stat label="Günlük güvenli" value={limits.gemini_safe_daily_limit} />
           <Stat label="Aylık güvenli" value={limits.gemini_safe_monthly_limit} />
-          <Stat label="Günlük beğeni" value={limits.max_likes_per_day ?? 40} />
-          <Stat label="Günlük yorum" value={limits.max_comments_per_day ?? 20} />
         </div>
       </div>
 

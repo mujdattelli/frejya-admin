@@ -28,23 +28,32 @@ export function SettingsSection() {
   const normKey = (k: any): ApiKey =>
     typeof k === 'string' ? { key: k, status: 'active', usage_count: 0, limit: 100 } : k;
 
+  // Kaydetme master-only RPC'lerden geçer — ham upsert worker sayaçlarını /
+  // scraper alanlarını eziyordu (yarış durumu). RPC satırı kilitler, yalnız
+  // admin'in düzenlediği alanları yazar; worker/scraper alanlarını korur.
   const saveKeys = async () => {
     setSaving(true); setMsg('');
-    const { error } = await supabase.from('system_settings').upsert({
-      id: 'api_keys',
-      free_keys: freeKeys.filter((k) => k.key.trim() !== ''),
-      paid_keys: paidKeys.filter((k) => k.key.trim() !== ''),
+    const { data, error } = await supabase.rpc('rpc_admin_save_api_keys', {
+      p_free: freeKeys.filter((k) => k.key.trim() !== ''),
+      p_paid: paidKeys.filter((k) => k.key.trim() !== ''),
     });
     setSaving(false);
-    setMsg(error ? 'Hata: ' + error.message : 'API anahtarları kaydedildi.');
+    if (error) { setMsg('Hata: ' + error.message); return; }
+    // RPC birleştirilmiş (worker sayaçları korunmuş) listeyi döner — state'i tazele.
+    const d = data as any;
+    if (d) {
+      setFreeKeys(Array.isArray(d.free_keys) ? d.free_keys.map(normKey) : []);
+      setPaidKeys(Array.isArray(d.paid_keys) ? d.paid_keys.map(normKey) : []);
+    }
+    setMsg('API anahtarları kaydedildi.');
   };
 
   const saveLimits = async () => {
     setSaving(true); setMsg('');
-    const { error } = await supabase.from('system_settings').upsert({
-      id: 'api_keys_global_limits',
-      ...limits,
-      scrape_status: 'manual_override',
+    const { error } = await supabase.rpc('rpc_admin_save_global_limits', {
+      p_gemini_safe_daily: parseInt(limits.gemini_safe_daily_limit) || 0,
+      p_max_likes: parseInt(limits.max_likes_per_day) || 0,
+      p_max_comments: parseInt(limits.max_comments_per_day) || 0,
     });
     setSaving(false);
     setMsg(error ? 'Hata: ' + error.message : 'Kotalar kaydedildi.');
@@ -91,12 +100,15 @@ export function SettingsSection() {
       </div>
 
       <div className="bg-card rounded-xl p-5 border border-white/5">
-        <h3 className="font-bold mb-4">Global Kotalar</h3>
+        <h3 className="font-bold mb-1">Global Kotalar</h3>
+        <p className="text-white/40 text-[11px] mb-4">
+          Gemini'de yalnızca <b>günlük (RPD)</b> ve dakikalık kota vardır — haftalık/aylık kota yoktur.
+          Anahtar başına güvenli günlük istek sınırını buradan girersiniz.
+        </p>
         {[
-          ['gemini_safe_daily_limit', 'Güvenli Günlük Limit'],
-          ['gemini_safe_monthly_limit', 'Güvenli Aylık Limit'],
-          ['max_likes_per_day', 'Günlük Beğeni Limiti'],
-          ['max_comments_per_day', 'Günlük Yorum Limiti'],
+          ['gemini_safe_daily_limit', 'Gemini Günlük İstek Limiti (RPD, anahtar başına)'],
+          ['max_likes_per_day', 'Günlük Beğeni Limiti (kullanıcı)'],
+          ['max_comments_per_day', 'Günlük Yorum Limiti (kullanıcı)'],
         ].map(([key, label]) => (
           <div key={key} className="flex justify-between items-center mb-3">
             <span className="text-white/70 text-xs">{label}</span>

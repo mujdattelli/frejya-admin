@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { UserDetailModal } from '../components/UserDetailModal';
 
 // Yetkiler & Premium — mobil admin panelindeki "Yetkiler" sekmesinin web karşılığı.
 // Aynı RPC'ler: rpc_admin_list_users (arama), rpc_set_user_role (admin yap/çıkar),
@@ -25,6 +26,7 @@ export function RolesSection() {
   const [searching, setSearching] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const search = async () => {
     const q = query.trim();
@@ -111,17 +113,25 @@ export function RolesSection() {
                     {roleLabel(u.role)}
                   </p>
                 </div>
-                <button
-                  onClick={() => toggleAdmin(u)}
-                  disabled={rowBusy}
-                  className={`shrink-0 text-xs font-bold rounded-lg px-3 py-2 border disabled:opacity-50 ${
-                    u.role === 'master'
-                      ? 'text-red-400 border-red-500/40 bg-red-500/10'
-                      : 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10'
-                  }`}
-                >
-                  {u.role === 'master' ? 'Yetkiyi Kaldır' : 'Admin Yap'}
-                </button>
+                <div className="flex gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setDetailId(u.id)}
+                    className="text-xs font-bold rounded-lg px-3 py-2 border border-white/15 bg-white/5 text-white/70"
+                  >
+                    Detay
+                  </button>
+                  <button
+                    onClick={() => toggleAdmin(u)}
+                    disabled={rowBusy}
+                    className={`text-xs font-bold rounded-lg px-3 py-2 border disabled:opacity-50 ${
+                      u.role === 'master'
+                        ? 'text-red-400 border-red-500/40 bg-red-500/10'
+                        : 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10'
+                    }`}
+                  >
+                    {u.role === 'master' ? 'Yetkiyi Kaldır' : 'Admin Yap'}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-white/5">
@@ -156,6 +166,8 @@ export function RolesSection() {
           );
         })}
       </div>
+
+      {detailId && <UserDetailModal userId={detailId} onClose={() => setDetailId(null)} />}
     </div>
   );
 }

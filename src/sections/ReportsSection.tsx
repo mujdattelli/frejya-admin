@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Şikayetler — suspicious_activities; admin uyarı / ban / yok say kararı verir.
+// 22 May 2026: karar artık master-only `rpc_admin_resolve_report` RPC'sinden
+// geçer. Eski ham client yazımı bildirimleri RLS yüzünden sessizce kaybediyor,
+// yanlış tabloya (public_profiles) ban/uyarı yazıyordu. Ayrıca: kullanıcı
+// isimleri çözülür, realtime auto-refresh, sayfalama.
 type Report = {
   id: string;
   threat_category: string | null;
@@ -16,92 +20,189 @@ type Report = {
 
 type Action = 'WARN' | 'BAN' | 'IGNORE';
 
+const PAGE = 30;
+
 export function ReportsSection() {
   const [reports, setReports] = useState<Report[]>([]);
+  const [names, setNames] = useState<Record<string, string>>({});
+  const [limit, setLimit] = useState(PAGE);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [action, setAction] = useState<Action>('WARN');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [q, setQ] = useState('');
+  const [catFilter, setCatFilter] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const load = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('suspicious_activities')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    setLoading(false);
+    if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
+    const pending = ((data as Report[]) || []).filter((r) => !r.status || r.status === 'pending');
+    setReports(pending);
+    setHasMore(((data as Report[]) || []).length === limit);
+
+    // Şikayet eden + edilen isimlerini çöz — admin ham UUID görmesin.
+    const ids = [...new Set(pending.flatMap((r) => [r.target_id, r.perpetrator_id]).filter(Boolean))];
+    if (ids.length > 0) {
+      const { data: profs } = await supabase
+        .from('public_profiles').select('id, display_name, username').in('id', ids);
+      const map: Record<string, string> = {};
+      (profs || []).forEach((p: any) => { map[p.id] = p.display_name || p.username || p.id; });
+      setNames(map);
+    }
+  }, [limit]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Realtime: yeni şikayet gelince liste F5'siz tazelensin.
   useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase
-        .from('suspicious_activities')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      setLoading(false);
-      if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
-      setReports(((data as Report[]) || []).filter((r) => !r.status || r.status === 'pending'));
-    })();
-  }, []);
+    const ch = supabase
+      .channel('admin-reports-section')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'suspicious_activities' }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [load]);
 
   const apply = async (r: Report) => {
     if (action !== 'IGNORE' && !note.trim()) { setMsg('Lütfen bir not yazın.'); return; }
     setBusy(true); setMsg('');
-    try {
-      const { data: perp } = await supabase
-        .from('public_profiles').select('display_name, username').eq('id', r.perpetrator_id).single();
-      const perpName = (perp as any)?.display_name || (perp as any)?.username || 'Kullanıcı';
-
-      if (action === 'WARN') {
-        const { data: b } = await supabase
-          .from('public_profiles').select('warning_count').eq('id', r.perpetrator_id).single();
-        await supabase.from('public_profiles')
-          .update({ warning_count: ((b as any)?.warning_count || 0) + 1 }).eq('id', r.perpetrator_id);
-        await supabase.from('system_notifications').insert({
-          user_id: r.perpetrator_id, title: 'Topluluk Kuralları Uyarısı',
-          message: `Bu davranışınızdan dolayı uyarıldınız, tekrarı banla sonuçlanır. Uyarı: ${note}`, is_read: false,
-        });
-        await supabase.from('suspicious_activities').update({ status: 'resolved_warned' }).eq('id', r.id);
-      } else if (action === 'BAN') {
-        await supabase.from('public_profiles').update({ is_banned: true }).eq('id', r.perpetrator_id);
-        await supabase.from('system_notifications').insert({
-          user_id: r.perpetrator_id, title: 'Hesabınız Kapatıldı',
-          message: `Topluluk kurallarını ihlal ettiğiniz için hesabınız kalıcı olarak kapatıldı. Neden: ${note}`, is_read: false,
-        });
-        await supabase.from('suspicious_activities').update({ status: 'resolved_banned' }).eq('id', r.id);
-      } else {
-        await supabase.from('suspicious_activities').update({ status: 'resolved_ignored' }).eq('id', r.id);
-      }
-
-      const resultStr = action === 'WARN' ? `${perpName} uyarıldı.` : action === 'BAN' ? `${perpName} banlandı.` : 'Şikayetiniz geçersiz sayıldı.';
-      await supabase.from('system_notifications').insert({
-        user_id: r.target_id, title: 'Şikayet Sonucu',
-        message: `${resultStr} Admin Notu: ${note || '-'}`, is_read: false,
-      });
-
-      setReports((prev) => prev.filter((x) => x.id !== r.id));
-      setOpenId(null); setNote(''); setAction('WARN');
-      setMsg('Karar uygulandı.');
-    } catch (e: any) {
-      setMsg('İşlem başarısız: ' + (e?.message || ''));
-    }
+    const { error } = await supabase.rpc('rpc_admin_resolve_report', {
+      p_report_id: r.id,
+      p_action: action,
+      p_note: note.trim() || null,
+    });
     setBusy(false);
+    if (error) { setMsg('İşlem başarısız: ' + error.message); return; }
+    setReports((prev) => prev.filter((x) => x.id !== r.id));
+    setOpenId(null); setNote(''); setAction('WARN');
+    setMsg('Karar uygulandı ve ilgili kullanıcılara bildirildi.');
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  // Toplu işlem — seçili şikayetleri tek transaction'da "yok say" olarak kapatır.
+  const bulkIgnore = async () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    if (!window.confirm(`${ids.length} şikayet "yok say" olarak kapatılsın mı?`)) return;
+    setBusy(true); setMsg('');
+    const { data, error } = await supabase.rpc('rpc_admin_bulk_ignore_reports', { p_report_ids: ids });
+    setBusy(false);
+    if (error) { setMsg('Toplu işlem başarısız: ' + error.message); return; }
+    setReports((prev) => prev.filter((x) => !selected.has(x.id)));
+    setSelected(new Set());
+    setMsg(`${(data as any)?.resolved ?? ids.length} şikayet yok sayıldı.`);
   };
 
   if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;
 
+  const nameOf = (id: string) => names[id] || id;
+
+  // Kategori filtre seçenekleri — yüklü şikayetlerden türetilir.
+  const categories = [...new Set(reports.map((r) => r.threat_category).filter(Boolean) as string[])].sort();
+
+  // Arama: şikayet eden/edilen ismi + sebep + alıntı + kategori.
+  const needle = q.trim().toLowerCase();
+  const visible = reports.filter((r) => {
+    if (catFilter && r.threat_category !== catFilter) return false;
+    if (!needle) return true;
+    const hay = [
+      nameOf(r.target_id), nameOf(r.perpetrator_id),
+      r.description, r.anonymized_snippet, r.threat_category,
+    ].filter(Boolean).join(' ').toLowerCase();
+    return hay.includes(needle);
+  });
+
   return (
     <div className="max-w-2xl">
+      <div className="flex gap-2 mb-3 flex-wrap">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="İsim, sebep veya alıntıda ara…"
+          className="flex-1 min-w-[180px] bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-500/50"
+        />
+        <select
+          value={catFilter}
+          onChange={(e) => setCatFilter(e.target.value)}
+          className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-500/50"
+        >
+          <option value="">Tüm kategoriler</option>
+          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        {(q || catFilter) && (
+          <button onClick={() => { setQ(''); setCatFilter(''); }}
+            className="px-3 py-2 text-xs text-white/50 border border-white/10 rounded-lg hover:bg-white/5">
+            Temizle
+          </button>
+        )}
+      </div>
+      {/* Toplu işlem çubuğu — görünen şikayetler için topluca yok say. */}
+      {visible.length > 0 && (
+        <div className="flex items-center gap-3 mb-3 text-xs">
+          <label className="flex items-center gap-1.5 text-white/60 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={visible.every((r) => selected.has(r.id))}
+              onChange={(e) =>
+                setSelected(e.target.checked ? new Set(visible.map((r) => r.id)) : new Set())
+              }
+            />
+            Tümünü seç
+          </label>
+          {selected.size > 0 && (
+            <>
+              <span className="text-white/50">{selected.size} seçili</span>
+              <button
+                onClick={bulkIgnore}
+                disabled={busy}
+                className="ml-auto px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 font-bold text-white/80 disabled:opacity-50"
+              >
+                {busy ? 'İşleniyor…' : 'Seçilenleri Yok Say'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
       {msg && <p className="text-white/50 text-xs mb-4">{msg}</p>}
       {reports.length === 0 ? (
         <p className="text-white/40 text-sm">Bekleyen şikayet yok.</p>
+      ) : visible.length === 0 ? (
+        <p className="text-white/40 text-sm">Aramanıza uyan şikayet yok.</p>
       ) : (
         <div className="flex flex-col gap-3">
-          {reports.map((r) => (
+          {visible.map((r) => (
             <div key={r.id} className="bg-card rounded-xl p-4 border-l-4 border-red-500 border-y border-r border-white/5">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-red-400 font-bold text-[11px] uppercase tracking-widest">{r.threat_category || 'Şikayet'}</span>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(r.id)}
+                    onChange={() => toggleSelect(r.id)}
+                  />
+                  <span className="text-red-400 font-bold text-[11px] uppercase tracking-widest">{r.threat_category || 'Şikayet'}</span>
+                </label>
                 <span className="text-white/40 text-[10px]">
                   {new Date(r.created_at || r.timestamp || Date.now()).toLocaleString('tr-TR')}
                 </span>
               </div>
-              <div className="bg-black/40 rounded-lg p-3 mb-3 text-[11px] font-mono">
-                <p className="text-white/70 mb-1">Şikayet eden: {r.target_id}</p>
-                <p className="text-white/70 mb-1">Şikayet edilen: <span className="text-red-400 font-bold">{r.perpetrator_id}</span></p>
+              <div className="bg-black/40 rounded-lg p-3 mb-3 text-[11px]">
+                <p className="text-white/70 mb-1">Şikayet eden: <span className="text-white/90 font-bold">{nameOf(r.target_id)}</span></p>
+                <p className="text-white/70 mb-1">Şikayet edilen: <span className="text-red-400 font-bold">{nameOf(r.perpetrator_id)}</span></p>
                 {r.description && <p className="text-primary italic mt-1">Sebep: "{r.description}"</p>}
                 {r.anonymized_snippet && <p className="text-white/50 mt-1">Alıntı: "{r.anonymized_snippet}"</p>}
               </div>
@@ -139,6 +240,12 @@ export function ReportsSection() {
               )}
             </div>
           ))}
+          {hasMore && (
+            <button onClick={() => setLimit((l) => l + PAGE)}
+              className="py-2 text-xs text-white/50 border border-white/10 rounded-lg hover:bg-white/5">
+              Daha fazla göster
+            </button>
+          )}
         </div>
       )}
     </div>

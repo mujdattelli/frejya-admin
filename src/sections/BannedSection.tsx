@@ -1,0 +1,72 @@
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+// Banlılar — banlı kullanıcıların listesi + ban kaldırma.
+// 22 May 2026: panelde banlı kullanıcıyı görme / yanlış banı geri alma yolu
+// yoktu. Liste + ban kaldırma master-only `rpc_admin_*` RPC'lerinden geçer.
+type BannedUser = {
+  id: string;
+  display_name: string | null;
+  username: string | null;
+  banned_until: number | null;
+  warning_count: number | null;
+  role: string | null;
+};
+
+export function BannedSection() {
+  const [users, setUsers] = useState<BannedUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState('');
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.rpc('rpc_admin_list_banned');
+    setLoading(false);
+    if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
+    setUsers((data as BannedUser[]) || []);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const unban = async (u: BannedUser) => {
+    if (!window.confirm(`"${u.display_name || u.username || u.id}" kullanıcısının banı kaldırılsın mı?`)) return;
+    setBusy(u.id); setMsg('');
+    const { error } = await supabase.rpc('rpc_admin_set_ban', { p_target_id: u.id, p_banned: false });
+    setBusy(null);
+    if (error) { setMsg('Hata: ' + error.message); return; }
+    setUsers((prev) => prev.filter((x) => x.id !== u.id));
+    setMsg(`${u.display_name || u.username} banı kaldırıldı.`);
+  };
+
+  if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;
+
+  return (
+    <div className="max-w-2xl">
+      {msg && <p className="text-white/50 text-xs mb-4">{msg}</p>}
+      {users.length === 0 ? (
+        <p className="text-white/40 text-sm">Banlı kullanıcı yok.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {users.map((u) => (
+            <div key={u.id} className="bg-card border border-white/5 rounded-xl p-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-bold text-sm truncate">{u.display_name || u.username || u.id}</p>
+                <p className="text-white/40 text-[11px] mt-0.5">
+                  {u.username ? '@' + u.username : ''}
+                  {(u.warning_count ?? 0) > 0 ? ` · ${u.warning_count} uyarı` : ''}
+                </p>
+              </div>
+              <button
+                onClick={() => unban(u)}
+                disabled={busy === u.id}
+                className="shrink-0 text-xs font-bold rounded-lg px-3 py-2 border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 disabled:opacity-50"
+              >
+                {busy === u.id ? '…' : 'Banı Kaldır'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
