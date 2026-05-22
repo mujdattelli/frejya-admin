@@ -9,6 +9,7 @@ import { SettingsSection } from '../sections/SettingsSection';
 import { ApiMonitorSection } from '../sections/ApiMonitorSection';
 import { OverviewSection } from '../sections/OverviewSection';
 import { BannedSection } from '../sections/BannedSection';
+import { AuditLogSection } from '../sections/AuditLogSection';
 import { BrandMark } from './ui';
 
 // masterOnly: yalnız master görür. Moderatör bu sekmeleri görmez ve
@@ -21,6 +22,7 @@ export const SECTIONS = [
   { key: 'roles', label: 'Yetkiler & Premium', color: '#C0A080', masterOnly: true },
   { key: 'banned', label: 'Banlılar', color: '#F59E0B' },
   { key: 'history', label: 'Karar Geçmişi', color: '#F59E0B' },
+  { key: 'audit', label: 'Denetim Kaydı', color: '#60A5FA', masterOnly: true },
   { key: 'settings', label: 'Ayarlar', color: '#10B981', masterOnly: true },
   { key: 'api', label: 'API İzleme', color: '#A855F7', masterOnly: true },
 ] as const;
@@ -116,6 +118,7 @@ export function Dashboard({ email, role }: { email: string; role: string }) {
         {active === 'roles' && role === 'master' && <RolesSection />}
         {active === 'banned' && <BannedSection />}
         {active === 'history' && <HistorySection />}
+        {active === 'audit' && role === 'master' && <AuditLogSection />}
         {active === 'settings' && role === 'master' && <SettingsSection />}
         {active === 'api' && role === 'master' && <ApiMonitorSection />}
       </main>
