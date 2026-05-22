@@ -45,11 +45,16 @@ export function ApiMonitorSection() {
         <p className="text-white/50 text-xs mb-3">
           Durum: <span className={limits.scrape_status === 'success' ? 'text-emerald-400' : 'text-red-400'}>{limits.scrape_status || '—'}</span>
         </p>
-        {/* Yalnız Gemini API kotaları — günlük beğeni/yorum kullanıcı davranış
-            limitidir, API izlemeyle alakası yok, buradan kaldırıldı. */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <Stat label="Günlük güvenli" value={limits.gemini_safe_daily_limit} />
-          <Stat label="Aylık güvenli" value={limits.gemini_safe_monthly_limit} />
+        {/* Gemini API kotaları — gerçek dönemler: RPM/TPM (dakikalık) + RPD
+            (günlük). Haftalık/aylık YOKtur. Değerler scraper'dan veya Ayarlar'dan
+            manuel girilir. (Beğeni/yorum kullanıcı davranış limiti — burada değil.) */}
+        <div className="grid grid-cols-1 gap-2 text-xs">
+          <Stat label="Dakikalık İstek (RPM)" value={limits.gemini_rpm_limit}
+            desc="Anahtar başına 60 saniyede yapılabilecek API çağrısı." />
+          <Stat label="Dakikalık Token (TPM)" value={limits.gemini_tpm_limit}
+            desc="60 saniyede işlenebilecek toplam token (girdi + çıktı)." />
+          <Stat label="Günlük İstek (RPD)" value={limits.gemini_rpd_limit}
+            desc="Anahtar başına 24 saatte çağrı (gece yarısı Pasifik'te sıfırlanır)." />
         </div>
       </div>
 
@@ -90,11 +95,14 @@ export function ApiMonitorSection() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: unknown }) {
+function Stat({ label, value, desc }: { label: string; value: unknown; desc?: string }) {
   return (
     <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2.5">
-      <p className="text-white/60">{label}</p>
-      <p className="text-emerald-400 font-bold text-sm">{value != null ? String(value) : '—'}</p>
+      <div className="flex justify-between items-baseline gap-3">
+        <p className="text-white/60">{label}</p>
+        <p className="text-emerald-400 font-bold text-sm">{value != null ? String(value) : '—'}</p>
+      </div>
+      {desc && <p className="text-white/35 text-[10px] mt-0.5">{desc}</p>}
     </div>
   );
 }

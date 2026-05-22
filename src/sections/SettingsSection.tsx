@@ -60,9 +60,9 @@ export function SettingsSection() {
   const saveLimits = async () => {
     setSaving(true); setMsg('');
     const { error } = await supabase.rpc('rpc_admin_save_global_limits', {
-      p_gemini_safe_daily: parseInt(limits.gemini_safe_daily_limit) || 0,
-      p_max_likes: parseInt(limits.max_likes_per_day) || 0,
-      p_max_comments: parseInt(limits.max_comments_per_day) || 0,
+      p_rpm: parseInt(limits.gemini_rpm_limit) || 0,
+      p_tpm: parseInt(limits.gemini_tpm_limit) || 0,
+      p_rpd: parseInt(limits.gemini_rpd_limit) || 0,
     });
     setSaving(false);
     setMsg(error ? 'Hata: ' + error.message : 'Kotalar kaydedildi.');
@@ -120,24 +120,30 @@ export function SettingsSection() {
       </div>
 
       <div className="bg-card rounded-xl p-5 border border-white/5">
-        <h3 className="font-bold mb-1">Global Kotalar</h3>
+        <h3 className="font-bold mb-1">Gemini Kotaları — Manuel Giriş</h3>
         <p className="text-white/40 text-[11px] mb-4">
-          Gemini'de yalnızca <b>günlük (RPD)</b> ve dakikalık kota vardır — haftalık/aylık kota yoktur.
-          Anahtar başına güvenli günlük istek sınırını buradan girersiniz.
+          Bu değerler normalde Google'ın resmi sayfasından otomatik çekilir
+          (API İzleme → Gemini Kotaları). Google sayfa yapısını değiştirip
+          otomatik çekme bozulursa, kotaları buradan <b>elle</b> girersiniz.
+          Gemini'de yalnızca <b>dakikalık (RPM/TPM)</b> ve <b>günlük (RPD)</b>
+          kota vardır — haftalık/aylık kota yoktur.
         </p>
-        {[
-          ['gemini_safe_daily_limit', 'Gemini Günlük İstek Limiti (RPD, anahtar başına)'],
-          ['max_likes_per_day', 'Günlük Beğeni Limiti (kullanıcı)'],
-          ['max_comments_per_day', 'Günlük Yorum Limiti (kullanıcı)'],
-        ].map(([key, label]) => (
-          <div key={key} className="flex justify-between items-center mb-3">
-            <span className="text-white/70 text-xs">{label}</span>
-            <input
-              type="number"
-              value={limits[key] ?? ''}
-              onChange={(e) => setLimits({ ...limits, [key]: parseInt(e.target.value) || 0 })}
-              className="bg-black/50 border border-white/20 rounded px-2 py-1 w-28 text-right text-xs outline-none"
-            />
+        {([
+          ['gemini_rpm_limit', 'Dakikalık İstek — RPM', 'Anahtar başına 60 saniyede yapılabilecek API çağrısı sayısı.'],
+          ['gemini_tpm_limit', 'Dakikalık Token — TPM', '60 saniyede işlenebilecek toplam token (girdi + çıktı).'],
+          ['gemini_rpd_limit', 'Günlük İstek — RPD', 'Anahtar başına 24 saatte yapılabilecek API çağrısı (gece yarısı Pasifik saatinde sıfırlanır).'],
+        ] as [string, string, string][]).map(([key, label, desc]) => (
+          <div key={key} className="mb-3">
+            <div className="flex justify-between items-center gap-3">
+              <span className="text-white/70 text-xs">{label}</span>
+              <input
+                type="number"
+                value={limits[key] ?? ''}
+                onChange={(e) => setLimits({ ...limits, [key]: parseInt(e.target.value) || 0 })}
+                className="bg-black/50 border border-white/20 rounded px-2 py-1 w-28 text-right text-xs outline-none shrink-0"
+              />
+            </div>
+            <p className="text-white/35 text-[10px] mt-0.5">{desc}</p>
           </div>
         ))}
         <button onClick={saveLimits} disabled={saving}
