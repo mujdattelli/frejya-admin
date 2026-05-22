@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
 // Şikayetler — suspicious_activities; admin uyarı / ban / yok say kararı verir.
 // 22 May 2026: karar artık master-only `rpc_admin_resolve_report` RPC'sinden
@@ -108,7 +109,7 @@ export function ReportsSection() {
     setMsg(`${(data as any)?.resolved ?? ids.length} şikayet yok sayıldı.`);
   };
 
-  if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;
+  if (loading) return <Loading />;
 
   const nameOf = (id: string) => names[id] || id;
 
@@ -178,11 +179,11 @@ export function ReportsSection() {
           )}
         </div>
       )}
-      {msg && <p className="text-white/50 text-xs mb-4">{msg}</p>}
+      <StatusMessage text={msg} />
       {reports.length === 0 ? (
-        <p className="text-white/40 text-sm">Bekleyen şikayet yok.</p>
+        <EmptyState text="Bekleyen şikayet yok." />
       ) : visible.length === 0 ? (
-        <p className="text-white/40 text-sm">Aramanıza uyan şikayet yok.</p>
+        <EmptyState text="Aramanıza uyan şikayet yok." />
       ) : (
         <div className="flex flex-col gap-3">
           {visible.map((r) => (

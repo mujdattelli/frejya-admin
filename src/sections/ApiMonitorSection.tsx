@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { Loading } from '../components/ui';
 
 // API İzleme — Gemini kotaları ve anahtar kullanımının salt-okunur görünümü.
 type ApiKey = { key: string; status?: string; usage_count?: number; limit?: number; [k: string]: any };
@@ -26,7 +27,7 @@ export function ApiMonitorSection() {
     })();
   }, []);
 
-  if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;
+  if (loading) return <Loading />;
 
   const Bar = ({ used, total, color }: { used: number; total: number; color: string }) => (
     <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">

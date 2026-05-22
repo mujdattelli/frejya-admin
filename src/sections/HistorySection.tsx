@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
 // Karar Geçmişi — onaylanmış / reddedilmiş fotoğraflar (salt okunur).
 // Veriler birden çok tablodan geldiği (public_profiles + audit_logs +
@@ -44,8 +45,8 @@ export function HistorySection() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;
-  if (msg) return <p className="text-red-400 text-sm">{msg}</p>;
+  if (loading) return <Loading />;
+  if (msg) return <StatusMessage text={msg} />;
 
   // Arama: isim/kullanıcı adı/red sebebi. Filtre: onaylı/reddedilen.
   const needle = q.trim().toLowerCase();
@@ -80,9 +81,9 @@ export function HistorySection() {
         {filterBtn('rejected', 'Reddedilen')}
       </div>
       {items.length === 0 ? (
-        <p className="text-white/40 text-sm">Geçmiş kayıt yok.</p>
+        <EmptyState text="Geçmiş kayıt yok." />
       ) : visible.length === 0 ? (
-        <p className="text-white/40 text-sm">Aramanıza uyan kayıt yok.</p>
+        <EmptyState text="Aramanıza uyan kayıt yok." />
       ) : (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {visible.map((h) => {

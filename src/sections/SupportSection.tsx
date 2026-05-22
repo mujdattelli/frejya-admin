@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
 // İstekler — kullanıcı destek/dilek talepleri (support_tickets, status='pending').
 // 22 May 2026: yanıt artık master-only `rpc_admin_reply_ticket` RPC'sinden geçer
@@ -76,7 +77,7 @@ export function SupportSection() {
     setMsg('Yanıt gönderildi ve kullanıcıya bildirildi.');
   };
 
-  if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;
+  if (loading) return <Loading />;
 
   // Arama: gönderen ismi + mesaj içeriği.
   const needle = q.trim().toLowerCase();
@@ -102,11 +103,11 @@ export function SupportSection() {
           </button>
         )}
       </div>
-      {msg && <p className="text-white/50 text-xs mb-4">{msg}</p>}
+      <StatusMessage text={msg} />
       {tickets.length === 0 ? (
-        <p className="text-white/40 text-sm">Bekleyen destek talebi yok.</p>
+        <EmptyState text="Bekleyen destek talebi yok." />
       ) : visible.length === 0 ? (
-        <p className="text-white/40 text-sm">Aramanıza uyan talep yok.</p>
+        <EmptyState text="Aramanıza uyan talep yok." />
       ) : (
         <div className="flex flex-col gap-3">
           {visible.map((ticket) => (

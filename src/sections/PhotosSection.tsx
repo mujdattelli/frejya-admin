@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserDetailModal } from '../components/UserDetailModal';
+import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
 // Fotoğraf Onayı — AI/manuel onay bekleyen profil fotoğrafları.
 type PendingPhoto = {
@@ -76,13 +77,13 @@ export function PhotosSection() {
     setBusy(null);
   };
 
-  if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;
+  if (loading) return <Loading />;
 
   return (
     <div>
-      {msg && <p className="text-white/50 text-xs mb-4">{msg}</p>}
+      <StatusMessage text={msg} />
       {photos.length === 0 ? (
-        <p className="text-white/40 text-sm">Onay bekleyen fotoğraf yok.</p>
+        <EmptyState text="Onay bekleyen fotoğraf yok." />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {photos.map((p) => {

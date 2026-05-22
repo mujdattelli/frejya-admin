@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,4 +11,12 @@ body {
   background: #111111;
   color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Marka kelime işareti — mobil uygulama + frejya.app ile aynı: Playfair
+   Display, normal ağırlık, 2px harf aralığı. Logo değişmezdir. */
+.brand-wordmark {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: 2px;
 }

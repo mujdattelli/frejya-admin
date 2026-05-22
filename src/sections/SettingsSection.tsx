@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { Loading, StatusMessage } from '../components/ui';
 
 // Ayarlar — dinamik AI API anahtarları (ücretsiz/ücretli) + global kotalar.
 type ApiKey = { key: string; status?: string; usage_count?: number; limit?: number; [k: string]: unknown };
@@ -59,7 +60,7 @@ export function SettingsSection() {
     setMsg(error ? 'Hata: ' + error.message : 'Kotalar kaydedildi.');
   };
 
-  if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;
+  if (loading) return <Loading />;
 
   const KeyList = ({ list, setList, color, label }: {
     list: ApiKey[]; setList: (v: ApiKey[]) => void; color: string; label: string;
@@ -87,7 +88,7 @@ export function SettingsSection() {
 
   return (
     <div className="max-w-2xl">
-      {msg && <p className="text-white/50 text-xs mb-4">{msg}</p>}
+      <StatusMessage text={msg} />
 
       <div className="bg-card rounded-xl p-5 border-l-4 border-emerald-500 border-y border-r border-white/5 mb-4">
         <h3 className="font-bold mb-4">Dinamik API Anahtarı Yönetimi</h3>

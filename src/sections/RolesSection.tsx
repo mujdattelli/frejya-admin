@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserDetailModal } from '../components/UserDetailModal';
+import { StatusMessage } from '../components/ui';
 
 // Yetkiler & Premium — mobil admin panelindeki "Yetkiler" sekmesinin web karşılığı.
 // Aynı RPC'ler: rpc_admin_list_users (arama), rpc_set_user_role (admin yap/çıkar),
@@ -98,7 +99,7 @@ export function RolesSection() {
         </button>
       </div>
 
-      {msg && <p className="text-white/50 text-xs mb-4">{msg}</p>}
+      <StatusMessage text={msg} />
 
       <div className="flex flex-col gap-2 max-w-2xl">
         {users.map((u) => {

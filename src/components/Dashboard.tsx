@@ -9,6 +9,7 @@ import { SettingsSection } from '../sections/SettingsSection';
 import { ApiMonitorSection } from '../sections/ApiMonitorSection';
 import { OverviewSection } from '../sections/OverviewSection';
 import { BannedSection } from '../sections/BannedSection';
+import { BrandMark } from './ui';
 
 // masterOnly: yalnız master görür. Moderatör bu sekmeleri görmez ve
 // ilgili RPC'ler sunucuda da moderatöre kapalıdır (çift katman).
@@ -54,8 +55,8 @@ export function Dashboard({ email, role }: { email: string; role: string }) {
       <aside className="md:w-60 bg-card border-b md:border-b-0 md:border-r border-white/10 flex flex-col">
         <div className="p-4 md:p-5 border-b border-white/10 flex items-center justify-between md:block">
           <div>
-            <h1 className="text-xl font-serif text-primary">Frejya</h1>
-            <p className="text-white/40 text-xs">Yönetim Paneli</p>
+            <BrandMark size={24} textClass="text-lg" />
+            <p className="text-white/40 text-xs mt-1">Yönetim Paneli</p>
           </div>
           {/* Mobilde çıkış butonu üst başlıkta — masaüstünde alt köşede. */}
           <button

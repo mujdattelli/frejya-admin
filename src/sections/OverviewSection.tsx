@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { Loading, StatusMessage } from '../components/ui';
 
 // Genel Bakış — bekleyen iş + kullanıcı sayaçları (rpc_admin_dashboard_stats).
 // 22 May 2026: panelde hiç özet yoktu; admin her sekmeyi tek tek açmak zorundaydı.
@@ -37,8 +38,8 @@ export function OverviewSection({ onNavigate }: { onNavigate?: (section: string)
     return () => { supabase.removeChannel(ch); };
   }, [load]);
 
-  if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;
-  if (msg) return <p className="text-red-400 text-sm">{msg}</p>;
+  if (loading) return <Loading />;
+  if (msg) return <StatusMessage text={msg} />;
   if (!stats) return null;
 
   // section: tıklanınca gidilecek sekme (Dashboard SECTIONS key'leri).

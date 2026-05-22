@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
 // Banlılar — banlı kullanıcıların listesi + ban kaldırma.
 // 22 May 2026: panelde banlı kullanıcıyı görme / yanlış banı geri alma yolu
@@ -39,7 +40,7 @@ export function BannedSection() {
     setMsg(`${u.display_name || u.username} banı kaldırıldı.`);
   };
 
-  if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;
+  if (loading) return <Loading />;
 
   // Arama: isim / kullanıcı adı.
   const needle = q.trim().toLowerCase();
@@ -64,11 +65,11 @@ export function BannedSection() {
           </button>
         )}
       </div>
-      {msg && <p className="text-white/50 text-xs mb-4">{msg}</p>}
+      <StatusMessage text={msg} />
       {users.length === 0 ? (
-        <p className="text-white/40 text-sm">Banlı kullanıcı yok.</p>
+        <EmptyState text="Banlı kullanıcı yok." />
       ) : visible.length === 0 ? (
-        <p className="text-white/40 text-sm">Aramanıza uyan kullanıcı yok.</p>
+        <EmptyState text="Aramanıza uyan kullanıcı yok." />
       ) : (
         <div className="flex flex-col gap-2">
           {visible.map((u) => (

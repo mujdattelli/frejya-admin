@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { BrandMark } from './ui';
 
 // Master admin e-posta/şifre ile giriş — mobil uygulamayla aynı Supabase Auth.
 export function Login() {
@@ -20,8 +21,8 @@ export function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={handleLogin} className="w-full max-w-sm bg-card border border-white/10 rounded-2xl p-8">
-        <h1 className="text-2xl font-serif text-primary text-center">Frejya</h1>
-        <p className="text-white/40 text-xs text-center mb-6">Yönetim Paneli</p>
+        <div className="flex justify-center"><BrandMark size={34} textClass="text-2xl" /></div>
+        <p className="text-white/40 text-xs text-center mb-6 mt-1.5">Yönetim Paneli</p>
         <input
           type="email" value={email} onChange={(e) => setEmail(e.target.value)}
           placeholder="E-posta" autoComplete="email"
