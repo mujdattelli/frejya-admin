@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { Login } from './components/Login';
 import { Dashboard } from './components/Dashboard';
+import { AdminMfa } from './components/AdminMfa';
 
 // Ağ takılırsa sonsuza dek "Yükleniyor…" ekranında kalmamak için her
 // Supabase çağrısını bir zaman aşımıyla sarmalar.
@@ -21,6 +22,9 @@ export default function App() {
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  // MFA durumu: null = henüz bakılmadı, true = oturum AAL2 (MFA tamam),
+  // false = MFA gerekli (enroll veya challenge).
+  const [mfaOk, setMfaOk] = useState<boolean | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -31,6 +35,7 @@ export default function App() {
       setSession(s);
       if (!s) {
         setRole(null);
+        setMfaOk(null);
         setLoading(false);
       }
     });
@@ -51,7 +56,13 @@ export default function App() {
         // PGRST116 = satır yok → kullanıcı private_users'ta değil (yetkisiz),
         // hata değil; rol null kalır ve "yetkin yok" ekranı gösterilir.
         if (error && error.code !== 'PGRST116') throw error;
-        setRole((prof as { role?: string } | null)?.role ?? null);
+        const r = (prof as { role?: string } | null)?.role ?? null;
+        setRole(r);
+        // Yetkili hesap (master/moderator) ise MFA seviyesini kontrol et.
+        if (r === 'master' || r === 'moderator') {
+          const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          setMfaOk(aal?.currentLevel === 'aal2');
+        }
       } catch (e) {
         setAuthError('Sunucuya ulaşılamadı. İnternet bağlantını kontrol edip tekrar dene.');
       } finally {
@@ -99,6 +110,10 @@ export default function App() {
         </button>
       </div>
     );
+  }
+  // İki adımlı doğrulama zorunlu — oturum AAL2 değilse panel açılmaz.
+  if (mfaOk === false) {
+    return <AdminMfa onDone={() => setMfaOk(true)} />;
   }
   return <Dashboard email={session.user.email ?? ''} role={role} />;
 }
