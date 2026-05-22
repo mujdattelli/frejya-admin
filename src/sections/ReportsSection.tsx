@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
+import { PostPreviewModal } from '../components/PostPreviewModal';
+
+// Şikayet alıntısındaki `post_id:UUID`'yi ayıklar (Aura gönderi şikayetleri).
+const extractPostId = (s: string | null | undefined): string | null => {
+  const m = (s || '').match(/post_id:\s*([0-9a-fA-F-]{36})/);
+  return m ? m[1] : null;
+};
 
 // Şikayetler — suspicious_activities; admin uyarı / ban / yok say kararı verir.
 // 22 May 2026: karar artık master-only `rpc_admin_resolve_report` RPC'sinden
@@ -37,6 +44,7 @@ export function ReportsSection() {
   const [q, setQ] = useState('');
   const [catFilter, setCatFilter] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [previewPostId, setPreviewPostId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -206,6 +214,17 @@ export function ReportsSection() {
                 <p className="text-white/70 mb-1">Şikayet edilen: <span className="text-red-400 font-bold">{nameOf(r.perpetrator_id)}</span></p>
                 {r.description && <p className="text-primary italic mt-1">Sebep: "{r.description}"</p>}
                 {r.anonymized_snippet && <p className="text-white/50 mt-1">Alıntı: "{r.anonymized_snippet}"</p>}
+                {(() => {
+                  const pid = extractPostId(r.anonymized_snippet) || extractPostId(r.description);
+                  return pid ? (
+                    <button
+                      onClick={() => setPreviewPostId(pid)}
+                      className="mt-2 text-primary text-[11px] underline"
+                    >
+                      Şikayet edilen gönderiyi gör →
+                    </button>
+                  ) : null;
+                })()}
               </div>
 
               {openId === r.id ? (
@@ -248,6 +267,10 @@ export function ReportsSection() {
             </button>
           )}
         </div>
+      )}
+
+      {previewPostId && (
+        <PostPreviewModal postId={previewPostId} onClose={() => setPreviewPostId(null)} />
       )}
     </div>
   );
