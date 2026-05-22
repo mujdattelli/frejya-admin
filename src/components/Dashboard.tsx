@@ -102,7 +102,13 @@ export function Dashboard({ email, role }: { email: string; role: string }) {
             Çıkış Yap
           </button>
         </div>
-        {active === 'overview' && <OverviewSection />}
+        {active === 'overview' && (
+          <OverviewSection
+            onNavigate={(s) => {
+              if (sections.some((sec) => sec.key === s)) setActive(s as SectionKey);
+            }}
+          />
+        )}
         {active === 'photos' && <PhotosSection />}
         {active === 'support' && <SupportSection />}
         {active === 'reports' && <ReportsSection />}

@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { UserDetailModal } from '../components/UserDetailModal';
 
 // Fotoğraf Onayı — AI/manuel onay bekleyen profil fotoğrafları.
 type PendingPhoto = {
   id: string;
+  display_name: string | null;
+  username: string | null;
   profile_picture_url: string | null;
   profile_picture_status: string;
   photo_rejection_count: number | null;
@@ -16,6 +19,7 @@ export function PhotosSection() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   // Foto-moderasyon kolonları private_users'da; ayrıca RLS admin'in başka
   // kullanıcının satırını güncellemesine izin vermez. Liste + karar bu yüzden
@@ -100,7 +104,13 @@ export function PhotosSection() {
                 ) : (
                   <div className="w-full h-40 rounded-lg mb-2 bg-black/40 flex items-center justify-center text-white/30 text-xs">foto yok</div>
                 )}
-                <p className="text-white/30 text-[10px] mb-3 font-mono truncate">User: {p.id.slice(0, 12)}…</p>
+                <p className="text-white/80 text-xs font-bold truncate">{p.display_name || '—'}</p>
+                <button
+                  onClick={() => setDetailId(p.id)}
+                  className="text-primary text-[10px] mb-2 underline truncate block max-w-full"
+                >
+                  @{p.username || p.id.slice(0, 8)} · Detay
+                </button>
                 <div className="flex gap-2">
                   <button onClick={() => decide(p, false)} disabled={busy === p.id}
                     className="flex-1 py-2 bg-red-500/10 text-red-400 font-bold text-[11px] rounded-lg disabled:opacity-50">
@@ -116,6 +126,8 @@ export function PhotosSection() {
           })}
         </div>
       )}
+
+      {detailId && <UserDetailModal userId={detailId} onClose={() => setDetailId(null)} />}
     </div>
   );
 }

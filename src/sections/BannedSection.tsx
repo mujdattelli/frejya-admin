@@ -18,6 +18,7 @@ export function BannedSection() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
+  const [q, setQ] = useState('');
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc('rpc_admin_list_banned');
@@ -40,14 +41,37 @@ export function BannedSection() {
 
   if (loading) return <p className="text-white/40 text-sm">Yükleniyor…</p>;
 
+  // Arama: isim / kullanıcı adı.
+  const needle = q.trim().toLowerCase();
+  const visible = users.filter((u) => {
+    if (!needle) return true;
+    return [u.display_name, u.username].filter(Boolean).join(' ').toLowerCase().includes(needle);
+  });
+
   return (
     <div className="max-w-2xl">
+      <div className="flex gap-2 mb-3">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="İsim veya kullanıcı adında ara…"
+          className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-500/50"
+        />
+        {q && (
+          <button onClick={() => setQ('')}
+            className="px-3 py-2 text-xs text-white/50 border border-white/10 rounded-lg hover:bg-white/5">
+            Temizle
+          </button>
+        )}
+      </div>
       {msg && <p className="text-white/50 text-xs mb-4">{msg}</p>}
       {users.length === 0 ? (
         <p className="text-white/40 text-sm">Banlı kullanıcı yok.</p>
+      ) : visible.length === 0 ? (
+        <p className="text-white/40 text-sm">Aramanıza uyan kullanıcı yok.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {users.map((u) => (
+          {visible.map((u) => (
             <div key={u.id} className="bg-card border border-white/5 rounded-xl p-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-bold text-sm truncate">{u.display_name || u.username || u.id}</p>
