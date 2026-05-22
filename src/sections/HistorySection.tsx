@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
@@ -19,19 +19,25 @@ type HistoryItem = {
 
 type Filter = 'all' | 'approved' | 'rejected';
 
+const PAGE = 60;
+
 export function HistorySection() {
   const [items, setItems] = useState<HistoryItem[]>([]);
+  const [limit, setLimit] = useState(PAGE);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
 
-  const load = async () => {
-    const { data, error } = await supabase.rpc('rpc_admin_list_photo_history');
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.rpc('rpc_admin_list_photo_history', { p_limit: limit });
     setLoading(false);
     if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
-    setItems((data as HistoryItem[]) || []);
-  };
+    const list = (data as HistoryItem[]) || [];
+    setItems(list);
+    setHasMore(list.length === limit);
+  }, [limit]);
 
   useEffect(() => {
     load();
@@ -43,7 +49,7 @@ export function HistorySection() {
         () => load())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [load]);
 
   if (loading) return <Loading />;
   if (msg) return <StatusMessage text={msg} />;
@@ -114,6 +120,12 @@ export function HistorySection() {
         );
       })}
       </div>
+      )}
+      {items.length > 0 && hasMore && (
+        <button onClick={() => setLimit((l) => l + PAGE)}
+          className="w-full mt-4 py-2 text-xs text-white/50 border border-white/10 rounded-lg hover:bg-white/5">
+          Daha fazla göster
+        </button>
       )}
     </div>
   );

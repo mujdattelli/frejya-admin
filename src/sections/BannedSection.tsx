@@ -14,19 +14,25 @@ type BannedUser = {
   role: string | null;
 };
 
+const PAGE = 50;
+
 export function BannedSection() {
   const [users, setUsers] = useState<BannedUser[]>([]);
+  const [limit, setLimit] = useState(PAGE);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [q, setQ] = useState('');
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase.rpc('rpc_admin_list_banned');
+    const { data, error } = await supabase.rpc('rpc_admin_list_banned', { p_limit: limit });
     setLoading(false);
     if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
-    setUsers((data as BannedUser[]) || []);
-  }, []);
+    const list = (data as BannedUser[]) || [];
+    setUsers(list);
+    setHasMore(list.length === limit);
+  }, [limit]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -90,6 +96,12 @@ export function BannedSection() {
               </button>
             </div>
           ))}
+          {hasMore && (
+            <button onClick={() => setLimit((l) => l + PAGE)}
+              className="py-2 text-xs text-white/50 border border-white/10 rounded-lg hover:bg-white/5">
+              Daha fazla göster
+            </button>
+          )}
         </div>
       )}
     </div>
