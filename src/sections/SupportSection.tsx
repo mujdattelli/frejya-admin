@@ -4,8 +4,10 @@ import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
 // İstekler — kullanıcı destek/dilek talepleri (support_tickets, status='pending').
 // 22 May 2026: yanıt artık master-only `rpc_admin_reply_ticket` RPC'sinden geçer
-// (ham client INSERT bildirimi RLS yüzünden sessizce kayboluyordu). Ayrıca:
-// gönderen ismi çözülür, realtime auto-refresh, sayfalama.
+// (ham client INSERT bildirimi RLS yüzünden sessizce kayboluyordu).
+// 26 May 2026: gönderen MAIL ADRESİ olarak gösterilir (kullanıcı kararı:
+// "İstekler mail adresi"). Email auth.users'dan rpc_admin_get_user_emails
+// ile çekilir; display_name yanına ek satır olarak yazılır.
 type Ticket = {
   id: string;
   sender_id: string;
@@ -13,11 +15,13 @@ type Ticket = {
   created_at: string;
 };
 
+type Sender = { email: string; displayName: string };
+
 const PAGE = 30;
 
 export function SupportSection() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [names, setNames] = useState<Record<string, string>>({});
+  const [senders, setSenders] = useState<Record<string, Sender>>({});
   const [limit, setLimit] = useState(PAGE);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -40,14 +44,19 @@ export function SupportSection() {
     setTickets(rows);
     setHasMore(rows.length === limit);
 
-    // Gönderen isimlerini çöz — admin ham UUID değil isim görsün.
+    // Gönderen MAİL adreslerini ve isimlerini çöz — admin ham UUID değil
+    // gerçek mail görsün (auth.users.email master-only RPC ile).
     const ids = [...new Set(rows.map((r) => r.sender_id).filter(Boolean))];
     if (ids.length > 0) {
-      const { data: profs } = await supabase
-        .from('public_profiles').select('id, display_name, username').in('id', ids);
-      const map: Record<string, string> = {};
-      (profs || []).forEach((p: any) => { map[p.id] = p.display_name || p.username || p.id; });
-      setNames(map);
+      const { data: emails } = await supabase.rpc('rpc_admin_get_user_emails', { p_ids: ids });
+      const map: Record<string, Sender> = {};
+      (emails || []).forEach((p: any) => {
+        map[p.id] = {
+          email: p.email || '(mail yok)',
+          displayName: p.display_name || p.id,
+        };
+      });
+      setSenders(map);
     }
   }, [limit]);
 
@@ -79,11 +88,12 @@ export function SupportSection() {
 
   if (loading) return <Loading />;
 
-  // Arama: gönderen ismi + mesaj içeriği.
+  // Arama: gönderen MAİL + isim + mesaj içeriği.
   const needle = q.trim().toLowerCase();
   const visible = tickets.filter((t) => {
     if (!needle) return true;
-    const hay = [names[t.sender_id] || t.sender_id, t.message].join(' ').toLowerCase();
+    const s = senders[t.sender_id];
+    const hay = [s?.email || '', s?.displayName || t.sender_id, t.message].join(' ').toLowerCase();
     return hay.includes(needle);
   });
 
@@ -93,7 +103,7 @@ export function SupportSection() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Kullanıcı veya mesaj içeriğinde ara…"
+          placeholder="Mail adresi, isim veya mesaj içeriğinde ara…"
           className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-teal-500/50"
         />
         {q && (
@@ -116,8 +126,11 @@ export function SupportSection() {
                 <span className="text-teal-400 font-bold text-[11px] uppercase tracking-widest">Destek Talebi</span>
                 <span className="text-white/40 text-[10px]">{new Date(ticket.created_at).toLocaleString('tr-TR')}</span>
               </div>
-              <p className="text-white/60 text-[11px] mb-2 truncate">
-                Kullanıcı: <span className="text-white/80 font-bold">{names[ticket.sender_id] || ticket.sender_id}</span>
+              <p className="text-white/60 text-[11px] mb-1 truncate">
+                Mail: <span className="text-white/90 font-bold">{senders[ticket.sender_id]?.email || '(yükleniyor…)'}</span>
+              </p>
+              <p className="text-white/40 text-[10px] mb-2 truncate">
+                {senders[ticket.sender_id]?.displayName || ticket.sender_id}
               </p>
               <p className="text-primary text-sm italic bg-black/40 rounded-lg p-3 mb-3">"{ticket.message}"</p>
 

@@ -3,16 +3,19 @@ import { supabase } from '../lib/supabase';
 import { UserDetailModal } from '../components/UserDetailModal';
 import { StatusMessage } from '../components/ui';
 
-// Yetkiler & Premium — mobil admin panelindeki "Yetkiler" sekmesinin web karşılığı.
+// Yetkiler & Premium & Onaylı — mobil admin panelindeki "Yetkiler" sekmesinin web karşılığı.
 // Aynı RPC'ler: rpc_admin_list_users (arama), rpc_set_user_role (admin yap/çıkar),
-// rpc_admin_set_premium (premium ver/uzat/kaldır) — hepsi master-only, sunucuda.
+// rpc_admin_set_premium (premium ver/uzat/kaldır), rpc_admin_set_verified (onaylı
+// ver/al — SMS sağlayıcısı yokken köprü çözüm) — hepsi master-only, sunucuda.
 
 type RoleUser = {
   id: string;
   displayName: string;
+  email: string;
   role: string;
   isPremium: boolean;
   premiumUntil: number | null;
+  isPhoneVerified: boolean;
 };
 
 const roleLabel = (role: string) =>
@@ -39,9 +42,11 @@ export function RolesSection() {
     const rows: RoleUser[] = (data || []).map((u: any) => ({
       id: u.id,
       displayName: u.display_name,
+      email: u.email || '',
       role: u.role || 'user',
       isPremium: !!u.is_premium,
       premiumUntil: u.premium_until ?? null,
+      isPhoneVerified: !!u.is_phone_verified,
     }));
     setUsers(rows);
     if (rows.length === 0) setMsg('Sonuç yok.');
@@ -63,6 +68,25 @@ export function RolesSection() {
     if (error) { setMsg('Hata: ' + error.message); return; }
     setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: newRole } : x)));
     setMsg(`${u.displayName} → ${makeAdmin ? 'Admin' : 'Normal kullanıcı'}`);
+  };
+
+  const applyVerified = async (u: RoleUser, makeVerified: boolean) => {
+    const ok = window.confirm(
+      `"${u.displayName}" → ${makeVerified ? 'ONAYLI (mavi tik)' : 'Onaylı KALDIRILACAK'}\n\n` +
+        (makeVerified
+          ? 'Bu kullanıcı doğrulanmış katmanına geçecek (zil 7/gün, mavi tik rozet).'
+          : 'Bu kullanıcının onaylı durumu sıfırlanacak; normal kullanıcı katmanına düşecek.')
+    );
+    if (!ok) return;
+    setBusy(u.id);
+    const { error } = await supabase.rpc('rpc_admin_set_verified', {
+      p_target_id: u.id,
+      p_verified: makeVerified,
+    });
+    setBusy(null);
+    if (error) { setMsg('Hata: ' + error.message); return; }
+    setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, isPhoneVerified: makeVerified } : x)));
+    setMsg(`${u.displayName} → ${makeVerified ? 'Onaylı verildi' : 'Onaylı kaldırıldı'}.`);
   };
 
   const applyPremium = async (u: RoleUser, months: number) => {
@@ -87,7 +111,7 @@ export function RolesSection() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && search()}
-          placeholder="Kullanıcı adına göre ara…"
+          placeholder="Mail adresine göre ara (kısmi de olur)…"
           className="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-primary/50"
         />
         <button
@@ -109,7 +133,10 @@ export function RolesSection() {
             <div key={u.id} className="bg-card border border-white/5 rounded-xl p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-bold text-sm truncate">{u.displayName}</p>
+                  <p className="font-bold text-sm truncate">{u.email || '(mail yok)'}</p>
+                  <p className="text-[11px] mt-0.5 text-white/55 truncate">
+                    {u.displayName}
+                  </p>
                   <p className={`text-[11px] mt-0.5 ${u.role === 'master' ? 'text-primary' : 'text-white/40'}`}>
                     {roleLabel(u.role)}
                   </p>
@@ -160,6 +187,27 @@ export function RolesSection() {
                         +{m} Ay
                       </button>
                     ))
+                  )}
+                </div>
+              </div>
+
+              {/* Onaylı (Verified — mavi tik) — SMS sağlayıcı henüz aktif olmadığı için
+                  master manuel olarak doğrulayabilir. RPC: rpc_admin_set_verified. */}
+              <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-white/5">
+                <p className={`text-[11px] ${u.isPhoneVerified ? 'text-blue-400' : 'text-white/40'}`}>
+                  {u.isPhoneVerified ? 'Onaylı (mavi tik)' : 'Onaylı değil'}
+                </p>
+                <div className="flex gap-1.5 shrink-0">
+                  {u.isPhoneVerified ? (
+                    <button onClick={() => applyVerified(u, false)} disabled={rowBusy}
+                      className="text-[11px] font-bold rounded-md px-2.5 py-1.5 border border-red-500/40 bg-red-500/10 text-red-400 disabled:opacity-50">
+                      Onaylıyı Kaldır
+                    </button>
+                  ) : (
+                    <button onClick={() => applyVerified(u, true)} disabled={rowBusy}
+                      className="text-[11px] font-bold rounded-md px-2.5 py-1.5 border border-blue-500/40 bg-blue-500/10 text-blue-400 disabled:opacity-50">
+                      Onaylı Yap
+                    </button>
                   )}
                 </div>
               </div>
