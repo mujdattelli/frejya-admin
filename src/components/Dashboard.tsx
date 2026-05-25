@@ -10,12 +10,14 @@ import { ApiMonitorSection } from '../sections/ApiMonitorSection';
 import { OverviewSection } from '../sections/OverviewSection';
 import { BannedSection } from '../sections/BannedSection';
 import { AuditLogSection } from '../sections/AuditLogSection';
+import { TiersSection } from '../sections/TiersSection';
 import { BrandMark } from './ui';
 
 // masterOnly: yalnız master görür. Moderatör bu sekmeleri görmez ve
 // ilgili RPC'ler sunucuda da moderatöre kapalıdır (çift katman).
 export const SECTIONS = [
   { key: 'overview', label: 'Genel Bakış', color: '#60A5FA' },
+  { key: 'users', label: 'Kullanıcılar', color: '#3B82F6', masterOnly: true },
   { key: 'photos', label: 'Fotoğraf Onayı', color: '#C0A080' },
   { key: 'support', label: 'İstekler', color: '#14B8A6' },
   { key: 'reports', label: 'Şikayetler', color: '#EF4444' },
@@ -112,6 +114,7 @@ export function Dashboard({ email, role }: { email: string; role: string }) {
             }}
           />
         )}
+        {active === 'users' && role === 'master' && <TiersSection />}
         {active === 'photos' && <PhotosSection />}
         {active === 'support' && <SupportSection />}
         {active === 'reports' && <ReportsSection />}
