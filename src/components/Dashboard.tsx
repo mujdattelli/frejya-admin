@@ -27,6 +27,7 @@ export const SECTIONS = [
   { key: 'audit', label: 'Denetim Kaydı', color: '#60A5FA', masterOnly: true },
   { key: 'settings', label: 'Ayarlar', color: '#10B981', masterOnly: true },
   { key: 'api', label: 'API İzleme', color: '#A855F7', masterOnly: true },
+  { key: 'health', label: 'Sistem Sağlığı', color: '#10B981', masterOnly: true },
 ] as const;
 
 type SectionKey = (typeof SECTIONS)[number]['key'];
@@ -124,6 +125,7 @@ export function Dashboard({ email, role }: { email: string; role: string }) {
         {active === 'audit' && role === 'master' && <AuditLogSection />}
         {active === 'settings' && role === 'master' && <SettingsSection />}
         {active === 'api' && role === 'master' && <ApiMonitorSection />}
+        {active === 'health' && role === 'master' && <SystemHealthSection />}
       </main>
     </div>
   );
