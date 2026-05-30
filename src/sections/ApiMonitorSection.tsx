@@ -37,7 +37,10 @@ export function ApiMonitorSection() {
       <h3 className="text-emerald-400 text-xs font-bold uppercase tracking-widest mb-2">Ücretsiz Havuz</h3>
       {freeKeys.length === 0 && <p className="text-white/40 text-xs mb-3">Anahtar yok.</p>}
       {freeKeys.map((k, i) => {
-        const used = k.usage_count || 0;
+        // Worker (ai-profile-verification-worker) sayacı `dailyUsage` alanına
+        // yazar; panel eskiden `usage_count` okuyordu → hep 0 görünüyordu.
+        // 30 May 2026: dailyUsage öncelikli, usage_count geriye dönük fallback.
+        const used = k.dailyUsage ?? k.usage_count ?? 0;
         const total = k.limit || 1050;
         return (
           <div key={i} className="bg-card rounded-lg p-3 mb-2 border border-white/5">
@@ -54,7 +57,8 @@ export function ApiMonitorSection() {
       <h3 className="text-red-400 text-xs font-bold uppercase tracking-widest mb-2 mt-4">Ücretli Havuz</h3>
       {paidKeys.length === 0 && <p className="text-white/40 text-xs">Anahtar yok.</p>}
       {paidKeys.map((k, i) => {
-        const used = k.usage_count || 0;
+        // Worker `dailyUsage` yazar (bkz. ücretsiz havuz notu).
+        const used = k.dailyUsage ?? k.usage_count ?? 0;
         const total = k.limit || 500;
         return (
           <div key={i} className="bg-card rounded-lg p-3 mb-2 border border-white/5">
