@@ -12,16 +12,25 @@ export function ApiMonitorSection() {
   const [freeKeys, setFreeKeys] = useState<ApiKey[]>([]);
   const [paidKeys, setPaidKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
+  // 30 May 2026: CANLI izleme — her 5 saniyede bir otomatik yenilenir.
+  // Worker foto onayladıkça dailyUsage artışı sayfa yenilemeden görünür.
   useEffect(() => {
-    (async () => {
+    let active = true;
+    const fetchKeys = async () => {
       const { data: keys } = await supabase.from('system_settings').select('*').eq('id', 'api_keys').single();
+      if (!active) return;
       const k = keys as any;
       const norm = (x: any): ApiKey => (typeof x === 'string' ? { key: x } : x);
       setFreeKeys(Array.isArray(k?.free_keys) ? k.free_keys.map(norm) : []);
       setPaidKeys(Array.isArray(k?.paid_keys) ? k.paid_keys.map(norm) : []);
+      setLastUpdate(new Date());
       setLoading(false);
-    })();
+    };
+    fetchKeys();
+    const interval = setInterval(fetchKeys, 5000); // 5 sn'de bir canlı yenile
+    return () => { active = false; clearInterval(interval); };
   }, []);
 
   if (loading) return <Loading />;
@@ -34,6 +43,12 @@ export function ApiMonitorSection() {
 
   return (
     <div className="max-w-2xl">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+        <span className="text-white/60 text-xs">
+          CANLI · her 5 sn yenilenir{lastUpdate ? ` · son: ${lastUpdate.toLocaleTimeString('tr-TR')}` : ''}
+        </span>
+      </div>
       <h3 className="text-emerald-400 text-xs font-bold uppercase tracking-widest mb-2">Ücretsiz Havuz</h3>
       {freeKeys.length === 0 && <p className="text-white/40 text-xs mb-3">Anahtar yok.</p>}
       {freeKeys.map((k, i) => {
