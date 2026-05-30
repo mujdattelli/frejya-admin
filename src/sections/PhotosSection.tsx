@@ -35,6 +35,8 @@ export function PhotosSection() {
 
   useEffect(() => {
     load();
+    // 31 May 2026: realtime'a EK olarak 5 sn polling (foto onay/red anında düşsün).
+    const poll = setInterval(load, 5000);
     // Realtime: bir foto onaylanır/reddedilir veya yeni PENDING gelirse listeyi
     // F5 olmadan tazele. Tek admin senaryosunda bile karar verince diğer
     // sekmeye geçmeden ekranın canlı kalması için.
@@ -47,7 +49,7 @@ export function PhotosSection() {
         { event: 'INSERT', schema: 'public', table: 'public_profiles' },
         () => load())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { clearInterval(poll); supabase.removeChannel(channel); };
   }, []);
 
   const decide = async (p: PendingPhoto, isApproved: boolean) => {
