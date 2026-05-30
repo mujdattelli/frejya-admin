@@ -7,6 +7,7 @@ import { SupportSection } from '../sections/SupportSection';
 import { ReportsSection } from '../sections/ReportsSection';
 import { SettingsSection } from '../sections/SettingsSection';
 import { ApiMonitorSection } from '../sections/ApiMonitorSection';
+import { SystemHealthSection } from '../sections/SystemHealthSection';
 import { OverviewSection } from '../sections/OverviewSection';
 import { BannedSection } from '../sections/BannedSection';
 import { AuditLogSection } from '../sections/AuditLogSection';
