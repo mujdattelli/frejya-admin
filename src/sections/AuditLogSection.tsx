@@ -51,7 +51,8 @@ export function AuditLogSection() {
     setHasMore(list.length === limit);
   }, [limit]);
 
-  useEffect(() => { load(); }, [load]);
+  // 31 May 2026: otomatik yenileme — her 5 sn tazelenir (manuel F5 yok).
+  useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
   if (loading) return <Loading />;
 

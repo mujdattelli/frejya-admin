@@ -103,6 +103,13 @@ export function TiersSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tier]);
 
+  // 31 May 2026: otomatik yenileme — tier SAYAÇLARI her 5 sn tazelenir.
+  // Kullanıcı listesi polling'e ALINMADI (sayfalama/scroll/arama bozulmasın).
+  useEffect(() => {
+    const id = setInterval(() => { loadStats(); }, 5000);
+    return () => clearInterval(id);
+  }, [loadStats]);
+
   const onSearch = () => loadUsers(true);
 
   if (loading) return <Loading />;

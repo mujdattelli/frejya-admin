@@ -25,7 +25,8 @@ export function OverviewSection({ onNavigate }: { onNavigate?: (section: string)
     setStats(data as Stats);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  // 31 May 2026: otomatik yenileme — realtime'a EK olarak 5 sn polling.
+  useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
   // Realtime: bekleyen iş sayaçları (foto/şikayet/destek/ban/üye) değişince
   // dashboard F5'siz canlı güncellensin — diğer sekmelerle tutarlı.

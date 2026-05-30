@@ -34,7 +34,8 @@ export function BannedSection() {
     setHasMore(list.length === limit);
   }, [limit]);
 
-  useEffect(() => { load(); }, [load]);
+  // 31 May 2026: otomatik yenileme — her 5 sn liste tazelenir (manuel F5 yok).
+  useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
   const unban = async (u: BannedUser) => {
     if (!window.confirm(`"${u.display_name || u.username || u.id}" kullanıcısının banı kaldırılsın mı?`)) return;

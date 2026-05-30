@@ -69,7 +69,8 @@ export function ReportsSection() {
     }
   }, [limit]);
 
-  useEffect(() => { load(); }, [load]);
+  // 31 May 2026: otomatik yenileme — realtime'a EK olarak 5 sn polling.
+  useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
   // Realtime: yeni şikayet gelince liste F5'siz tazelensin.
   useEffect(() => {
