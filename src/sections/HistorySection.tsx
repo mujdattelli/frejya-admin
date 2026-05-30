@@ -116,6 +116,15 @@ export function HistorySection() {
             <p className="text-white/30 text-[10px] truncate">
               {h.username ? '@' + h.username : h.id.slice(0, 8) + '…'} · {evaluator}
             </p>
+            {/* 30 May 2026: onay/red TAM SAATİ (gün-ay-yıl saat:dakika:saniye) */}
+            <p className="text-white/50 text-[10px] mt-1">
+              🕐 {dateStr
+                ? new Date(dateStr).toLocaleString('tr-TR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                  })
+                : '—'}
+            </p>
           </div>
         );
       })}
