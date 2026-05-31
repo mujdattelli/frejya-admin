@@ -29,6 +29,28 @@ export function SystemHealthSection() {
   const [data, setData] = useState<Health | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
+  // 31 May 2026 Faz 5.3: test push — bir kullanıcı "bildirim gelmiyor" derse
+  // admin onun push_token'ının geçerliliğini buradan test eder (rpc_admin_test_push).
+  const [pushUserId, setPushUserId] = useState('');
+  const [pushResult, setPushResult] = useState('');
+  const [pushSending, setPushSending] = useState(false);
+
+  const sendTestPush = async () => {
+    const id = pushUserId.trim();
+    if (!id) { setPushResult('Kullanıcı ID gir.'); return; }
+    setPushSending(true);
+    setPushResult('');
+    try {
+      const { data: r, error } = await supabase.rpc('rpc_admin_test_push', { p_target_id: id });
+      if (error) { setPushResult('Hata: ' + error.message); }
+      else if ((r as any)?.sent) { setPushResult(`✅ Gönderildi → ${(r as any).target} (${(r as any).token_preview})`); }
+      else { setPushResult(`⚠️ ${(r as any)?.note || 'Token yok'}`); }
+    } catch (e: any) {
+      setPushResult('Hata: ' + (e?.message || e));
+    } finally {
+      setPushSending(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -110,6 +132,30 @@ export function SystemHealthSection() {
       <p className="text-white/30 text-[10px] mt-3">
         🟢 sağlıklı · 🔴 gecikmiş/hiç çalışmamış · ⚪ kasıtlı kapalı. Dakikalık cron 5 dk, günlük cron 26 saat eşiğiyle değerlendirilir.
       </p>
+
+      {/* Test Push — kullanıcı "bildirim gelmiyor" derse token testi */}
+      <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2 mt-6">Test Push Bildirimi</h3>
+      <div className="bg-card rounded-lg p-3 border border-white/5">
+        <p className="text-white/40 text-[11px] mb-2">
+          Kullanıcı ID'sini gir → o cihaza test bildirimi gönderilir. Token yoksa uyarı verir.
+        </p>
+        <div className="flex gap-2">
+          <input
+            value={pushUserId}
+            onChange={(e) => setPushUserId(e.target.value)}
+            placeholder="Kullanıcı UUID"
+            className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs outline-none focus:border-primary/50 font-mono"
+          />
+          <button
+            onClick={sendTestPush}
+            disabled={pushSending}
+            className="px-4 py-2 rounded-lg text-xs font-bold bg-primary/20 border border-primary/40 disabled:opacity-50"
+          >
+            {pushSending ? 'Gönderiliyor…' : 'Test Gönder'}
+          </button>
+        </div>
+        {pushResult && <p className="text-white/70 text-[11px] mt-2">{pushResult}</p>}
+      </div>
     </div>
   );
 }
