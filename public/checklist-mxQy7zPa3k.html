@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Frejya — Test Listesi (özel)</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #FCFAF6; color: #1A1A1A;
+    font-size: 15px; line-height: 1.5;
+    overscroll-behavior-y: contain;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px 16px 80px; }
+  header {
+    position: sticky; top: 0; background: #FCFAF6; z-index: 10;
+    padding: 14px 0 10px;
+    border-bottom: 1px solid rgba(192,160,128,0.25);
+    margin-bottom: 18px;
+  }
+  h1 { font-family: Georgia, serif; font-size: 22px; margin: 0 0 8px;
+       color: #6D28D9; letter-spacing: 0.5px; }
+  .subtitle { color: #5A5249; font-size: 12px; margin-bottom: 12px; font-style: italic; }
+  .progress-bar {
+    height: 8px; background: #E8E0CE; border-radius: 4px;
+    overflow: hidden; margin-bottom: 8px;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, #C0A080, #6D28D9);
+    border-radius: 4px; transition: width 0.4s ease;
+  }
+  .progress-text {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; color: #5A5249;
+  }
+  .progress-text strong { color: #1A1A1A; font-size: 14px; }
+  .toolbar {
+    display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+  }
+  .toolbar button {
+    padding: 6px 12px; border-radius: 18px; border: 1px solid #C0A080;
+    background: white; color: #1A1A1A; font-size: 12px; cursor: pointer;
+    font-family: inherit;
+  }
+  .toolbar button:hover { background: #FCF6E8; }
+  .toolbar button.danger { border-color: #EF4444; color: #EF4444; }
+  .toolbar button.active { background: #6D28D9; color: white; border-color: #6D28D9; }
+  details {
+    background: white; border: 1px solid #E8E0CE; border-radius: 14px;
+    margin-bottom: 12px; overflow: hidden;
+  }
+  summary {
+    padding: 14px 16px; cursor: pointer; list-style: none;
+    display: flex; align-items: center; gap: 10px;
+    font-family: Georgia, serif; font-weight: 700; font-size: 16px;
+    user-select: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '▾'; margin-left: auto; color: #C0A080; transition: transform 0.2s; }
+  details[open] summary::after { transform: rotate(180deg); }
+  summary .count {
+    background: #F1ECE2; color: #5A5249; font-size: 11px;
+    padding: 2px 8px; border-radius: 10px; font-weight: 500;
+    font-family: -apple-system, sans-serif;
+  }
+  summary .count.done { background: #6D28D9; color: white; }
+  .section-body { padding: 0 16px 12px; }
+  .subsection {
+    margin: 8px 0; padding: 8px 0;
+    border-top: 1px solid rgba(232,224,206,0.6);
+  }
+  .subsection:first-child { border-top: none; }
+  .sub-title {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: #C0A080; font-weight: 700; margin-bottom: 6px;
+  }
+  .item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 7px 4px; cursor: pointer; border-radius: 8px;
+    transition: background 0.15s;
+  }
+  .item:hover { background: #FCF6E8; }
+  .item input[type=checkbox] {
+    appearance: none; -webkit-appearance: none;
+    width: 20px; height: 20px; flex-shrink: 0;
+    border: 1.5px solid #C0A080; border-radius: 5px; margin: 1px 0 0;
+    cursor: pointer; position: relative;
+    background: white;
+  }
+  .item input[type=checkbox]:checked {
+    background: #6D28D9; border-color: #6D28D9;
+  }
+  .item input[type=checkbox]:checked::after {
+    content: '✓'; color: white; font-size: 13px; font-weight: 700;
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .item-text { flex: 1; font-size: 14px; line-height: 1.4; }
+  .item.done .item-text { color: #A0998E; text-decoration: line-through; }
+  .item-id {
+    font-family: ui-monospace, monospace; font-size: 11px;
+    color: #C0A080; margin-right: 6px; font-weight: 600;
+  }
+  .bug-section { margin-top: 12px; padding: 10px 12px;
+    background: #FEF2F2; border-left: 3px solid #EF4444; border-radius: 8px; }
+  .bug-section .sub-title { color: #B91C1C; }
+  .emoji { font-size: 16px; }
+  .importance-critical { border-left: 4px solid #EF4444; }
+  .importance-important { border-left: 4px solid #F59E0B; }
+  .importance-nice { border-left: 4px solid #10B981; }
+  .filter-hidden { display: none; }
+  textarea {
+    width: 100%; min-height: 100px; border: 1px solid #C0A080;
+    border-radius: 8px; padding: 10px; font-family: ui-monospace, monospace;
+    font-size: 11px; resize: vertical;
+  }
+  .sync-box {
+    background: white; border: 1px solid #C0A080; border-radius: 14px;
+    padding: 14px; margin-top: 12px; display: none;
+  }
+  .sync-box.open { display: block; }
+  .sync-box h3 { margin: 0 0 8px; font-family: Georgia, serif; font-size: 14px; }
+  .sync-box p { margin: 6px 0; font-size: 12px; color: #5A5249; }
+  .sync-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .sync-actions button { padding: 6px 12px; border-radius: 14px; border: 1px solid #C0A080;
+    background: white; cursor: pointer; font-size: 12px; }
+  footer {
+    margin-top: 24px; padding-top: 16px; border-top: 1px solid #E8E0CE;
+    font-size: 11px; color: #A0998E; text-align: center; font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Frejya — Test Listesi</h1>
+    <div class="subtitle">özel · login yok · ticks bu cihazda kaydedilir</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="pf" style="width: 0%"></div>
+    </div>
+    <div class="progress-text">
+      <span><strong id="done">0</strong> / <span id="total">0</span> tamamlandı</span>
+      <span id="percent">%0</span>
+    </div>
+    <div class="toolbar">
+      <button id="filter-toggle" type="button">Sadece tamamlanmamış</button>
+      <button id="expand-all" type="button">Hepsini aç</button>
+      <button id="collapse-all" type="button">Hepsini kapa</button>
+      <button id="sync-toggle" type="button">↔ Senkron</button>
+      <button id="reset" class="danger" type="button">Sıfırla</button>
+    </div>
+    <div class="sync-box" id="sync-box">
+      <h3>Cihazlar arası senkron</h3>
+      <p>Bu sayfa <code>localStorage</code> kullanır — telefonun ve PC'nin ayrı tikleri vardır.
+         Birinden ötekine taşımak için: <strong>Export</strong> → karşı cihazda <strong>Import</strong>.</p>
+      <div class="sync-actions">
+        <button id="export-btn" type="button">📋 Export (kopyala)</button>
+        <button id="import-btn" type="button">⤓ Import</button>
+      </div>
+      <textarea id="sync-textarea" placeholder="Import için: yapıştır ve 'Import' bas..."></textarea>
+    </div>
+  </header>
+
+  <div id="sections"></div>
+
+  <footer>
+    Frejya · özel test listesi · localStorage <code>frejya_checklist_v1</code><br>
+    URL kimseyle paylaşma — bu sayfa indekslenmiyor (noindex)
+  </footer>
+</div>
+
+<script>
+const CHECKLIST = [
+  { key: '1', title: 'Hesap & Oturum', emoji: '🔴', importance: 'critical',
+    subsections: [
+      { title: '1.1 İlk Açılış', items: [
+        { id: '1.1.1', text: 'Temiz cihazda uygulama açılıyor (siyah ekrana takılmıyor)' },
+        { id: '1.1.2', text: 'Login ekranı responsive (notch/home-indicator değmiyor)' },
+        { id: '1.1.3', text: 'E-posta tıklayınca klavye açılır, form klavye üstüne kayar' },
+        { id: '1.1.4', text: '"Hesap oluştur" → SignUp ekranı açılır' },
+      ]},
+      { title: '1.2 Kayıt (SignUp)', items: [
+        { id: '1.2.1', text: 'E-posta, şifre, doğum yılı, cinsiyet, takma ad, avatar, boy/kilo sırayla' },
+        { id: '1.2.2', text: 'Kadın seçince kadın ses tonu (erkek karışmıyor)' },
+        { id: '1.2.3', text: '18 yaş altı reddedilir' },
+        { id: '1.2.4', text: '60 yaş üstü reddedilir' },
+        { id: '1.2.5', text: 'Foto "İncelemeye gönderildi" (asla "Onaylandı")' },
+        { id: '1.2.6', text: 'Kayıt sonrası 5dk grace tam erişim' },
+        { id: '1.2.7', text: '~5dk içinde foto onay/red balonu' },
+      ]},
+      { title: '1.3 Giriş (Login)', items: [
+        { id: '1.3.1', text: 'Doğru e-posta+şifre → ana ekran' },
+        { id: '1.3.2', text: 'Yanlış şifre → "Kalan deneme: X"' },
+        { id: '1.3.3', text: '5 hata → 5dk kilit' },
+        { id: '1.3.4', text: 'Doğrulanmamış e-posta → uyarı' },
+        { id: '1.3.5', text: 'Banlı hesap → "Topluluk kuralları"' },
+      ]},
+      { title: '1.4 Çıkış (Logout)', items: [
+        { id: '1.4.1', text: 'Profilim → Çıkış → Login ekranı (siyah kalmıyor)' },
+        { id: '1.4.2', text: 'Kapat-aç → otomatik login YOK' },
+        { id: '1.4.3', text: '"Invalid Refresh Token" gözükmez' },
+      ]},
+      { title: '1.5 Şifremi Unuttum', items: [
+        { id: '1.5.1', text: 'Modal\'da kırmızı amber uyarı' },
+        { id: '1.5.2', text: 'Gönder → ek Alert "Yine de sıfırla?"' },
+        { id: '1.5.3', text: 'İptal işler' },
+        { id: '1.5.4', text: 'Onay → "Bağlantı gönderildi"' },
+      ]},
+      { title: '1.6 Şifre Değiştir', items: [
+        { id: '1.6.1', text: 'Tüm metinler Türkçe' },
+        { id: '1.6.2', text: 'Eski şifre yanlış → uyarı' },
+        { id: '1.6.3', text: 'Yeni şifre <6 karakter → uyarı' },
+        { id: '1.6.4', text: 'Onay aynı değil → uyarı' },
+        { id: '1.6.5', text: 'Alert: "eski mesajların açılamaz, devam?"' },
+        { id: '1.6.6', text: 'Onayla → "Şifre güncellendi"' },
+        { id: '1.6.7', text: 'Eski mesajlar hâlâ açılır (aynı cihazda)' },
+      ]},
+      { title: '1.7 Tek Aktif Oturum', items: [
+        { id: '1.7.1', text: 'Cihaz A → B login → A\'da 5sn\'de kırmızı toast' },
+        { id: '1.7.2', text: 'A otomatik logout, Login ekranı' },
+        { id: '1.7.3', text: 'B\'de oturum devam eder' },
+        { id: '1.7.4', text: 'A tekrar login → B kicker' },
+      ]},
+    ],
+    bugCheck: [
+      { id: '1.X.1', text: 'Login esnasında 15sn freeze' },
+      { id: '1.X.2', text: '"Kullanıcı bulunamadı" hatası' },
+      { id: '1.X.3', text: 'İki cihaz da açık kalıyor' },
+      { id: '1.X.4', text: 'Logout sonrası siyah ekran' },
+    ]},
+  { key: '2', title: 'Profil', emoji: '🔴', importance: 'critical',
+    subsections: [
+      { title: '2.1 Kendi Profilim', items: [
+        { id: '2.1.1', text: 'Gerçek foto üstte büyük (APPROVED)' },
+        { id: '2.1.2', text: 'Foto durumu rozet' },
+        { id: '2.1.3', text: 'Demografi chip\'leri' },
+        { id: '2.1.4', text: 'Hobiler chip' },
+        { id: '2.1.5', text: 'Bio paragraf' },
+        { id: '2.1.6', text: 'Sesli tanıtım butonu' },
+        { id: '2.1.7', text: 'Gönderilerim grid' },
+        { id: '2.1.8', text: '"Profili Düzenle" butonu' },
+        { id: '2.1.9', text: 'Mahlas tier rengi' },
+        { id: '2.1.10', text: 'Onaylı mavi tik + Premium taç (ikisi varsa iki rozet)' },
+      ]},
+      { title: '2.2 Başkasının Profili', items: [
+        { id: '2.2.1', text: 'Hayvan avatar (gerçek foto YOK)' },
+        { id: '2.2.2', text: 'Demografi/hobiler/bio' },
+        { id: '2.2.3', text: '"Takip Et"/"Takipten Çık" doğru' },
+        { id: '2.2.4', text: '"Zil Çal" butonu (şartlara göre)' },
+        { id: '2.2.5', text: 'Takipçi/Takip sayıları' },
+        { id: '2.2.6', text: 'Sayıya tık → liste açılmıyor (sadece kendisi)' },
+      ]},
+      { title: '2.3 Takipçi/Takip Modal', items: [
+        { id: '2.3.1', text: 'Modal anında açılır' },
+        { id: '2.3.2', text: 'Mahlaslar (e-posta DEĞİL)' },
+        { id: '2.3.3', text: 'Her satırda kullanıcının avatarı (cinsiyet rengi)' },
+        { id: '2.3.4', text: 'Premium taç, Onaylı mavi tik' },
+        { id: '2.3.5', text: 'Sayı liste uzunluğuyla aynı' },
+        { id: '2.3.6', text: 'Duplicate yok' },
+        { id: '2.3.7', text: 'Satıra tık → o profil' },
+        { id: '2.3.8', text: '30+ takipçi sayfalı yükleme' },
+      ]},
+      { title: '2.4 Profili Düzenle', items: [
+        { id: '2.4.1', text: 'Mahlas/boy/kilo/hobi/bio/meslek değişir' },
+        { id: '2.4.2', text: 'Yeni foto → AI onayına gider' },
+        { id: '2.4.3', text: 'Cinsiyet/doğum yılı/ses sabit (gri)' },
+        { id: '2.4.4', text: 'Sesli tanıtım 60sn limit' },
+        { id: '2.4.5', text: 'Sesli perde (Tok/Derin/Dinamik/Sıcak)' },
+      ]},
+    ],
+    bugCheck: [
+      { id: '2.X.1', text: 'Başkasının gerçek foto sızıyorsa' },
+      { id: '2.X.2', text: 'Takipçi e-mail gösteriyorsa' },
+      { id: '2.X.3', text: 'Hep aynı avatar' },
+      { id: '2.X.4', text: 'Sayı=7 liste boş' },
+      { id: '2.X.5', text: 'Tier rozet yanlış' },
+    ]},
+  { key: '3', title: 'Aura (Sosyal Akış)', emoji: '🟡', importance: 'important',
+    subsections: [
+      { title: '3.1 Akış Sekmeleri', items: [
+        { id: '3.1.1', text: 'Genel: karşı cins (kendim YOK)' },
+        { id: '3.1.2', text: 'Takip: takip ettiklerim (kendim YOK)' },
+        { id: '3.1.3', text: 'Müsaitler: mesajlaşmada OLMAYAN' },
+        { id: '3.1.4', text: 'Reviewer hiçbir akışta görünmüyor' },
+        { id: '3.1.5', text: 'Banlı/silinmiş görünmüyor' },
+        { id: '3.1.6', text: 'Engellediğim görünmüyor' },
+      ]},
+      { title: '3.2 Paylaşım', items: [
+        { id: '3.2.1', text: '"+" → CreatePostModal' },
+        { id: '3.2.2', text: 'Hiyeroglif klavye max 12 ikon' },
+        { id: '3.2.3', text: '13. eklemeye çalışınca engellenir' },
+        { id: '3.2.4', text: 'Boş ikon ile yayınlanmaz' },
+      ]},
+      { title: '3.3 Etkileşim', items: [
+        { id: '3.3.1', text: 'Beğeni/yorum → Aura kırmızı rozet (push/balon YOK)' },
+        { id: '3.3.2', text: 'Aura aç → rozet sıfırlanır' },
+      ]},
+      { title: '3.4 Post Yığını (FIFO)', items: [
+        { id: '3.4.1', text: 'Normal 51. → en eski silinir (max 50)' },
+        { id: '3.4.2', text: 'Premium 101. → max 100' },
+      ]},
+    ],
+    bugCheck: [
+      { id: '3.X.1', text: 'Kendi postu Genel\'de' },
+      { id: '3.X.2', text: 'Hetero filtre çalışmıyorsa' },
+      { id: '3.X.3', text: '13. ikon kabul edilirse' },
+      { id: '3.X.4', text: 'Aura push/balon olarak düşerse' },
+    ]},
+  { key: '4', title: 'Detaylı Arama', emoji: '🟡', importance: 'important',
+    subsections: [
+      { title: '4.1 Form', items: [
+        { id: '4.1.1', text: 'Yaş/boy/eğitim/meslek/sigara/alkol/evcil/din chip' },
+        { id: '4.1.2', text: '"Bana Uygun" formu doldurur' },
+        { id: '4.1.3', text: 'Arama yap → sonuç sayfası' },
+      ]},
+      { title: '4.2 Sonuçlar', items: [
+        { id: '4.2.1', text: 'Normal 5 sonuç' },
+        { id: '4.2.2', text: 'Onaylı 10 sonuç' },
+        { id: '4.2.3', text: 'Premium 25 sonuç' },
+        { id: '4.2.4', text: 'Anahtara tık → profil' },
+        { id: '4.2.5', text: 'Profili kapat → sonuçlara döner' },
+        { id: '4.2.6', text: '"Filtrelere Dön" → arama formu' },
+      ]},
+    ],
+    bugCheck: [
+      { id: '4.X.1', text: 'Profilden geri formuna düşüyorsa' },
+      { id: '4.X.2', text: 'Tier limit yanlış' },
+      { id: '4.X.3', text: 'Mesajlaşmadakiler aramada' },
+    ]},
+  { key: '5', title: 'Zil & Kapı', emoji: '🔴', importance: 'critical',
+    subsections: [
+      { title: '5.1 Zil Çalma Şartları', items: [
+        { id: '5.1.1', text: 'Önce takip ettim' },
+        { id: '5.1.2', text: 'Mesajlaşmada değilim' },
+        { id: '5.1.3', text: 'Bugün ona <2 zil' },
+        { id: '5.1.4', text: 'Bu ay ona <4 zil' },
+        { id: '5.1.5', text: 'Son 5dk içinde ona zil yok' },
+        { id: '5.1.6', text: 'Günlük zil hakkı dolmamış (5/7/20)' },
+        { id: '5.1.7', text: 'Hedef mesajlaşmada bile zil çalabilirim' },
+        { id: '5.1.8', text: '60 gün block varsa çalamam' },
+      ]},
+      { title: '5.2 KAPI Sekmesi', items: [
+        { id: '5.2.1', text: 'Bana zil → KAPI listede' },
+        { id: '5.2.2', text: 'Mesajlaşmadayken gelen zil görünmez' },
+        { id: '5.2.3', text: 'Mesajlaşma bitince pending zil KAPI\'ya düşer' },
+        { id: '5.2.4', text: 'Kabul → ChatScreen + "Kapınız açıldı"' },
+        { id: '5.2.5', text: 'Reddet → silinir' },
+        { id: '5.2.6', text: 'Görmezden gel → pending kalır' },
+      ]},
+      { title: '5.3 Foreground Balon', items: [
+        { id: '5.3.1', text: '1 zil → "{Mahlas} kapını çaldı"' },
+        { id: '5.3.2', text: '60sn 2 zil → "2 kişi kapını çaldı"' },
+        { id: '5.3.3', text: '60sn 5 zil → "5 kişi" (tek balon)' },
+        { id: '5.3.4', text: 'Balona tık → KAPI sekmesi' },
+        { id: '5.3.5', text: 'Mesajlaşmadayken balon çıkmaz' },
+      ]},
+      { title: '5.4 Push (Background)', items: [
+        { id: '5.4.1', text: 'Arka planda zil → bildirim merkezi push' },
+        { id: '5.4.2', text: '"🔔 Kapın çalınıyor — {Mahlas}"' },
+        { id: '5.4.3', text: 'Tıkla → uygulama + KAPI deep-link' },
+      ]},
+    ],
+    bugCheck: [
+      { id: '5.X.1', text: 'Mesajlaşmadayken zil çalabilirse' },
+      { id: '5.X.2', text: 'Balon çıkmıyorsa' },
+      { id: '5.X.3', text: 'Mesajlaşmada balon görünüyorsa' },
+      { id: '5.X.4', text: '5 zil = 5 ayrı balon' },
+      { id: '5.X.5', text: 'Balon yanlış sekme' },
+      { id: '5.X.6', text: 'Push gelmiyorsa' },
+    ]},
+  { key: '6', title: 'Mesajlaşma & E2EE', emoji: '🔴', importance: 'critical',
+    subsections: [
+      { title: '6.1 Sohbet Açılışı', items: [
+        { id: '6.1.1', text: 'Zil kabul → ChatScreen' },
+        { id: '6.1.2', text: '"Kapınız açıldı!" balon' },
+        { id: '6.1.3', text: 'Balona tık → ChatScreen direkt' },
+        { id: '6.1.4', text: 'Header: partner adı, online, BİTİR' },
+        { id: '6.1.5', text: 'Partner mahlasına tık → onun profili' },
+      ]},
+      { title: '6.2 Mesaj Gönderme', items: [
+        { id: '6.2.1', text: 'Yaz → Gönder' },
+        { id: '6.2.2', text: 'Hemen ekranda (optimistic)' },
+        { id: '6.2.3', text: 'Karşı tarafa realtime' },
+        { id: '6.2.4', text: 'Uzun bas → Kopyala/Sil' },
+        { id: '6.2.5', text: 'Uzun mesaj wrap' },
+      ]},
+      { title: '6.3 E2EE', items: [
+        { id: '6.3.1', text: 'Üstte "uçtan uca şifreli" yeşil' },
+        { id: '6.3.2', text: 'Partner anahtar yoksa → sarı uyarı' },
+        { id: '6.3.3', text: 'Uninstall+reinstall aynı şifre → eski mesajlar geri' },
+        { id: '6.3.4', text: 'Yanlış şifre → amber banner' },
+        { id: '6.3.5', text: 'Çözülemeyen üstte tek banner' },
+      ]},
+      { title: '6.4 Kazıma', items: [
+        { id: '6.4.1', text: 'Üstte token rozet' },
+        { id: '6.4.2', text: '40+40 kelime → 1 kazıma hakkı' },
+        { id: '6.4.3', text: '50 kelime → 10 carry-over' },
+        { id: '6.4.4', text: '9 hak → foto tamamen açılır' },
+        { id: '6.4.5', text: 'Parmakla yavaş yavaş açılır' },
+        { id: '6.4.6', text: '9 hakka ulaşınca mesaj trigger durur' },
+        { id: '6.4.7', text: 'Kazıma açıkken arka planda gerçek foto' },
+        { id: '6.4.8', text: 'Foto değişince arka plan güncellenir' },
+      ]},
+      { title: '6.5 Sesli Mesaj', items: [
+        { id: '6.5.1', text: 'Mic foto tam açılmadan kilitli' },
+        { id: '6.5.2', text: 'Tam açılınca aktif' },
+        { id: '6.5.3', text: '60 saniye kayıt limiti' },
+        { id: '6.5.4', text: '15 gün sonra otomatik silinir' },
+        { id: '6.5.5', text: 'Süresi dolan → "süresi doldu"' },
+      ]},
+      { title: '6.6 OS Push (yeni mesaj)', items: [
+        { id: '6.6.1', text: 'Arka planda → bildirim merkezi' },
+        { id: '6.6.2', text: '"Yeni Mesaj — {mahlas}" (içerik GİZLİ)' },
+        { id: '6.6.3', text: 'Tıkla → ChatScreen deep-link' },
+        { id: '6.6.4', text: 'Ön plandaysa OS bildirimi yok' },
+      ]},
+      { title: '6.7 Bitir', items: [
+        { id: '6.7.1', text: 'BİTİR → "emin misin?"' },
+        { id: '6.7.2', text: 'Onayla → chat silinir' },
+        { id: '6.7.3', text: '60 gün karşılıklı engel' },
+        { id: '6.7.4', text: '15 gün sonra mesajlar silinir' },
+      ]},
+    ],
+    bugCheck: [
+      { id: '6.X.1', text: 'Mesaj çift düşerse' },
+      { id: '6.X.2', text: '"[Şifreli Mesaj]" her satırda' },
+      { id: '6.X.3', text: 'Foto açılmadan mic aktif' },
+      { id: '6.X.4', text: 'Ses 15gün dolmadan silinmişse' },
+      { id: '6.X.5', text: 'Kazıma sayacı yanlış' },
+    ]},
+  { key: '7', title: 'Bildirim & Balon', emoji: '🔴', importance: 'critical',
+    subsections: [
+      { title: '7.1 Kritik Sistem', items: [
+        { id: '7.1.1', text: 'Foto onaylandı → siyah balon (mesajlaşmada bile)' },
+        { id: '7.1.2', text: 'Foto balon tık → profilim (liste DEĞİL)' },
+        { id: '7.1.3', text: 'Foto reddedildi → kırmızı balon → profilim' },
+        { id: '7.1.4', text: 'Şikayet sonucu → balon → liste' },
+        { id: '7.1.5', text: 'Topluluk uyarısı → balon → liste' },
+        { id: '7.1.6', text: 'Hesap kapatma → balon + otomatik logout' },
+        { id: '7.1.7', text: 'Aynı bildirim iki kez balon olmaz' },
+      ]},
+      { title: '7.2 İzleme', items: [
+        { id: '7.2.1', text: 'Takip ettiğim mesajlaşmasını bitirdi → balon' },
+        { id: '7.2.2', text: 'Balona tık → İZLEME sekmesi' },
+        { id: '7.2.3', text: 'İZLEME rozeti var' },
+      ]},
+      { title: '7.3 Aura', items: [
+        { id: '7.3.1', text: 'Beğeni/yorum/takip → push/balon YOK, sadece kırmızı rozet' },
+      ]},
+    ],
+    bugCheck: [
+      { id: '7.X.1', text: 'Foto balonu liste açıyorsa' },
+      { id: '7.X.2', text: 'Push çift düşerse' },
+      { id: '7.X.3', text: 'Balon mantıksız sayı' },
+    ]},
+  { key: '8', title: 'Premium & Onaylı', emoji: '🟢', importance: 'nice',
+    subsections: [
+      { title: '8.1 Tier Görüntüsü', items: [
+        { id: '8.1.1', text: 'Profilim → Üyeliğim kartı' },
+        { id: '8.1.2', text: 'Mahlas yanında tier rengi' },
+        { id: '8.1.3', text: 'Premium taç + Onaylı tik (iki rozet birden olabilir)' },
+      ]},
+      { title: '8.2 Davet', items: [
+        { id: '8.2.1', text: '8 haneli benzersiz davet kodu' },
+        { id: '8.2.2', text: '"Paylaş" → Share API' },
+        { id: '8.2.3', text: 'Davet edilen foto onaylanınca → +1 ay Premium' },
+        { id: '8.2.4', text: 'Max 5 ay birikir' },
+        { id: '8.2.5', text: 'Aynı device_id → premium VERMEZ' },
+      ]},
+      { title: '8.3 Tier Limitleri', items: [
+        { id: '8.3.1', text: 'Normal: 5 zil, 100 takip, 50 post, 5 sonuç' },
+        { id: '8.3.2', text: 'Onaylı: 7 zil, 100 takip, 50 post, 10 sonuç' },
+        { id: '8.3.3', text: 'Premium: 20 zil, 500 takip, 100 post, 25 sonuç' },
+        { id: '8.3.4', text: 'Limit aşımı → net hata' },
+      ]},
+    ]},
+  { key: '9', title: 'Admin Paneli', emoji: '🟢', importance: 'nice',
+    subsections: [
+      { title: '9.1 Genel', items: [
+        { id: '9.1.1', text: 'Master login OK' },
+        { id: '9.1.2', text: 'Genel Bakış kartları' },
+        { id: '9.1.3', text: 'Kullanıcılar liste/arama/ban/unban' },
+        { id: '9.1.4', text: 'Manuel foto onayı' },
+      ]},
+      { title: '9.2 Sistem Sağlığı', items: [
+        { id: '9.2.1', text: '5 kart + cron listesi' },
+        { id: '9.2.2', text: 'Gecikmiş cron "Çalıştır"' },
+        { id: '9.2.3', text: 'E2EE Health Check' },
+        { id: '9.2.4', text: 'Test Push' },
+      ]},
+      { title: '9.3 Premium', items: [
+        { id: '9.3.1', text: 'Kullanıcıya Premium ver/al' },
+      ]},
+    ]},
+  { key: '10', title: 'Edge & Network', emoji: '🟡', importance: 'important',
+    subsections: [
+      { title: '10.1 Network', items: [
+        { id: '10.1.1', text: 'Uçak modda → cache\'den' },
+        { id: '10.1.2', text: 'Yeni mesaj → "İnternet yok"' },
+        { id: '10.1.3', text: 'Net gelince → OK' },
+        { id: '10.1.4', text: '3G/yavaş → profil <1sn' },
+        { id: '10.1.5', text: 'RPC 10sn+ → timeout' },
+      ]},
+      { title: '10.2 Multi-Device', items: [
+        { id: '10.2.1', text: 'Multi-device E2EE: 2. cihaz aynı şifre → eski mesajlar restore' },
+        { id: '10.2.2', text: 'Background→foreground → realtime reconnect' },
+      ]},
+      { title: '10.3 İzinler', items: [
+        { id: '10.3.1', text: 'Bildirim izni SignUp sonrası bir kez' },
+        { id: '10.3.2', text: 'Kamera/mic izni kullanırken' },
+      ]},
+    ]},
+  { key: '11', title: 'OS Push', emoji: '🟡', importance: 'important',
+    subsections: [
+      { title: '11.1 Platform', items: [
+        { id: '11.1.1', text: 'Android bildirim çekmecesi' },
+        { id: '11.1.2', text: 'iOS bildirim merkezi + lock screen' },
+        { id: '11.1.3', text: 'Tıkla → deep-link doğru ekran' },
+        { id: '11.1.4', text: 'Grouplama' },
+        { id: '11.1.5', text: 'Metin gizliliği' },
+      ]},
+    ]},
+];
+
+// ─── State (localStorage) ───
+const STORAGE_KEY = 'frejya_checklist_v1';
+let state = {};
+try { state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { state = {}; }
+let onlyUnchecked = false;
+
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function countAll() {
+  let total = 0, done = 0;
+  CHECKLIST.forEach(s => {
+    s.subsections.forEach(sub => sub.items.forEach(it => {
+      total++; if (state[it.id]) done++;
+    }));
+    if (s.bugCheck) s.bugCheck.forEach(it => {
+      total++; if (state[it.id]) done++;
+    });
+  });
+  return { total, done };
+}
+
+function countSection(s) {
+  let total = 0, done = 0;
+  s.subsections.forEach(sub => sub.items.forEach(it => {
+    total++; if (state[it.id]) done++;
+  }));
+  if (s.bugCheck) s.bugCheck.forEach(it => {
+    total++; if (state[it.id]) done++;
+  });
+  return { total, done };
+}
+
+function renderItem(it) {
+  const checked = !!state[it.id];
+  if (onlyUnchecked && checked) return '';
+  return `
+    <label class="item${checked ? ' done' : ''}" data-id="${it.id}">
+      <input type="checkbox" ${checked ? 'checked' : ''} data-id="${it.id}">
+      <span class="item-text"><span class="item-id">${it.id}</span>${it.text}</span>
+    </label>
+  `;
+}
+
+function renderSubsection(sub) {
+  const items = sub.items.map(renderItem).join('');
+  return `
+    <div class="subsection">
+      <div class="sub-title">${sub.title}</div>
+      ${items}
+    </div>
+  `;
+}
+
+function renderBugCheck(items, sectionKey) {
+  if (!items || !items.length) return '';
+  const html = items.map(renderItem).join('');
+  return `
+    <div class="bug-section">
+      <div class="sub-title">${sectionKey}.X Olası Hatalar</div>
+      ${html}
+    </div>
+  `;
+}
+
+function renderSection(s) {
+  const { total, done } = countSection(s);
+  const allDone = done === total && total > 0;
+  return `
+    <details class="importance-${s.importance}" id="sec-${s.key}">
+      <summary>
+        <span class="emoji">${s.emoji}</span>
+        <span>${s.key}. ${s.title}</span>
+        <span class="count${allDone ? ' done' : ''}">${done}/${total}</span>
+      </summary>
+      <div class="section-body">
+        ${s.subsections.map(renderSubsection).join('')}
+        ${renderBugCheck(s.bugCheck, s.key)}
+      </div>
+    </details>
+  `;
+}
+
+function renderAll() {
+  document.getElementById('sections').innerHTML = CHECKLIST.map(renderSection).join('');
+}
+
+function updateProgress() {
+  const { total, done } = countAll();
+  document.getElementById('done').textContent = done;
+  document.getElementById('total').textContent = total;
+  document.getElementById('pf').style.width = ((done / total) * 100) + '%';
+  document.getElementById('percent').textContent = '%' + Math.round((done / total) * 100);
+}
+
+// ─── Events ───
+document.addEventListener('change', (e) => {
+  if (e.target.matches('input[type=checkbox][data-id]')) {
+    const id = e.target.dataset.id;
+    state[id] = e.target.checked;
+    save();
+    // Visual update
+    const label = e.target.closest('.item');
+    if (label) {
+      if (e.target.checked) label.classList.add('done');
+      else label.classList.remove('done');
+    }
+    // Update section count
+    const details = e.target.closest('details');
+    if (details) {
+      const secKey = details.id.replace('sec-', '');
+      const sec = CHECKLIST.find(s => s.key === secKey);
+      if (sec) {
+        const { total, done } = countSection(sec);
+        const allDone = done === total && total > 0;
+        const countEl = details.querySelector('summary .count');
+        if (countEl) {
+          countEl.textContent = `${done}/${total}`;
+          countEl.classList.toggle('done', allDone);
+        }
+      }
+    }
+    updateProgress();
+    if (onlyUnchecked && e.target.checked) {
+      // Hide just-checked item
+      setTimeout(() => { if (label) label.style.display = 'none'; }, 300);
+    }
+  }
+});
+
+document.getElementById('filter-toggle').addEventListener('click', (e) => {
+  onlyUnchecked = !onlyUnchecked;
+  e.target.classList.toggle('active', onlyUnchecked);
+  e.target.textContent = onlyUnchecked ? 'Hepsini göster' : 'Sadece tamamlanmamış';
+  renderAll();
+  updateProgress();
+});
+
+document.getElementById('expand-all').addEventListener('click', () => {
+  document.querySelectorAll('details').forEach(d => d.open = true);
+});
+document.getElementById('collapse-all').addEventListener('click', () => {
+  document.querySelectorAll('details').forEach(d => d.open = false);
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+  if (!confirm('TÜM tikleri silmek istediğine emin misin? Geri alınamaz.')) return;
+  state = {};
+  save();
+  renderAll();
+  updateProgress();
+});
+
+document.getElementById('sync-toggle').addEventListener('click', () => {
+  document.getElementById('sync-box').classList.toggle('open');
+});
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  const text = JSON.stringify(state);
+  document.getElementById('sync-textarea').value = text;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Pano\'ya kopyalandı! Diğer cihazda Import\'a yapıştır.');
+    }, () => {
+      alert('Yukarıdaki kutudan elle kopyala.');
+    });
+  } else {
+    alert('Yukarıdaki kutudan elle kopyala.');
+  }
+});
+
+document.getElementById('import-btn').addEventListener('click', () => {
+  const text = document.getElementById('sync-textarea').value.trim();
+  if (!text) { alert('Önce JSON\'ı yapıştır.'); return; }
+  try {
+    const parsed = JSON.parse(text);
+    if (typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error();
+    if (!confirm('Mevcut tikler ÜZERİNE yazılacak. Devam?')) return;
+    state = parsed;
+    save();
+    renderAll();
+    updateProgress();
+    alert('İmport tamam ✓');
+  } catch(e) { alert('Geçersiz JSON.'); }
+});
+
+// ─── Init ───
+renderAll();
+updateProgress();
+</script>
+</body>
+</html>
