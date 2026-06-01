@@ -78,28 +78,47 @@
     color: #C0A080; font-weight: 700; margin-bottom: 6px;
   }
   .item {
-    display: flex; align-items: flex-start; gap: 10px;
-    padding: 7px 4px; cursor: pointer; border-radius: 8px;
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 8px 4px; border-radius: 8px;
     transition: background 0.15s;
   }
   .item:hover { background: #FCF6E8; }
-  .item input[type=checkbox] {
+  .platform-boxes {
+    display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;
+    margin: 0 0 0 0;
+  }
+  .platform-check {
+    display: flex; align-items: center; gap: 4px;
+    cursor: pointer; user-select: none;
+  }
+  .platform-check input[type=checkbox] {
     appearance: none; -webkit-appearance: none;
-    width: 20px; height: 20px; flex-shrink: 0;
-    border: 1.5px solid #C0A080; border-radius: 5px; margin: 1px 0 0;
+    width: 18px; height: 18px; flex-shrink: 0;
+    border: 1.5px solid #C0A080; border-radius: 4px;
     cursor: pointer; position: relative;
     background: white;
   }
-  .item input[type=checkbox]:checked {
+  .platform-check input[type=checkbox]:checked {
     background: #6D28D9; border-color: #6D28D9;
   }
-  .item input[type=checkbox]:checked::after {
-    content: '✓'; color: white; font-size: 13px; font-weight: 700;
+  .platform-check.iphone input[type=checkbox]:checked {
+    background: #1A1A1A; border-color: #1A1A1A;
+  }
+  .platform-check input[type=checkbox]:checked::after {
+    content: '✓'; color: white; font-size: 11px; font-weight: 700;
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
   }
+  .platform-label {
+    font-size: 9px; font-weight: 700;
+    color: #5A5249; letter-spacing: 0.5px;
+    text-transform: uppercase; min-width: 20px;
+  }
+  .platform-label.iphone { color: #1A1A1A; }
+  .platform-label.android { color: #6D28D9; }
   .item-text { flex: 1; font-size: 14px; line-height: 1.4; }
-  .item.done .item-text { color: #A0998E; text-decoration: line-through; }
+  .item.done-all .item-text { color: #A0998E; text-decoration: line-through; }
+  .item.done-one .item-text { color: #7A6D5C; }
   .item-id {
     font-family: ui-monospace, monospace; font-size: 11px;
     color: #C0A080; margin-right: 6px; font-weight: 600;
@@ -137,7 +156,7 @@
 <div class="wrap">
   <header>
     <h1>Frejya — Test Listesi</h1>
-    <div class="subtitle">özel · login yok · ticks bu cihazda kaydedilir</div>
+    <div class="subtitle">özel · her madde için <strong style="color:#6D28D9">A</strong>ndroid ve <strong style="color:#1A1A1A">i</strong>Phone ayrı tik · her ikisi geçince yeşil sayılır</div>
     <div class="progress-bar">
       <div class="progress-fill" id="pf" style="width: 0%"></div>
     </div>
@@ -526,21 +545,73 @@ const CHECKLIST = [
 ];
 
 // ─── State (localStorage) ───
-const STORAGE_KEY = 'frejya_checklist_v1';
+// v2 format: state[id] = { android: bool, iphone: bool }
+// v1 backward compat: state[id] = true (eski tek-checkbox) → her ikisi true sayilir
+const STORAGE_KEY = 'frejya_checklist_v2';
+const OLD_STORAGE_KEY = 'frejya_checklist_v1';
 let state = {};
-try { state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { state = {}; }
+
+function loadState() {
+  // v2 var mi?
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) { state = JSON.parse(raw); return; }
+  } catch(e) {}
+  // v1'den geç (legacy)
+  try {
+    const oldRaw = localStorage.getItem(OLD_STORAGE_KEY);
+    if (oldRaw) {
+      const old = JSON.parse(oldRaw);
+      Object.keys(old).forEach(id => {
+        if (old[id] === true) {
+          state[id] = { android: true, iphone: true };
+        }
+      });
+      save();
+      return;
+    }
+  } catch(e) {}
+  state = {};
+}
+
+function getItemState(id) {
+  const v = state[id];
+  if (!v) return { android: false, iphone: false };
+  // Eski format true ise (migrate edilmemiş edge)
+  if (v === true) return { android: true, iphone: true };
+  return { android: !!v.android, iphone: !!v.iphone };
+}
+
+function setItemState(id, platform, checked) {
+  const cur = getItemState(id);
+  cur[platform] = checked;
+  if (!cur.android && !cur.iphone) {
+    delete state[id];
+  } else {
+    state[id] = cur;
+  }
+  save();
+}
+
+loadState();
 let onlyUnchecked = false;
 
 function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+// Bir madde "tamamlandı" = HER İKİ platform işaretli
+function isItemFullyDone(id) {
+  const s = getItemState(id);
+  return s.android && s.iphone;
+}
 
 function countAll() {
   let total = 0, done = 0;
   CHECKLIST.forEach(s => {
     s.subsections.forEach(sub => sub.items.forEach(it => {
-      total++; if (state[it.id]) done++;
+      total++; if (isItemFullyDone(it.id)) done++;
     }));
     if (s.bugCheck) s.bugCheck.forEach(it => {
-      total++; if (state[it.id]) done++;
+      total++; if (isItemFullyDone(it.id)) done++;
     });
   });
   return { total, done };
@@ -549,22 +620,34 @@ function countAll() {
 function countSection(s) {
   let total = 0, done = 0;
   s.subsections.forEach(sub => sub.items.forEach(it => {
-    total++; if (state[it.id]) done++;
+    total++; if (isItemFullyDone(it.id)) done++;
   }));
   if (s.bugCheck) s.bugCheck.forEach(it => {
-    total++; if (state[it.id]) done++;
+    total++; if (isItemFullyDone(it.id)) done++;
   });
   return { total, done };
 }
 
 function renderItem(it) {
-  const checked = !!state[it.id];
-  if (onlyUnchecked && checked) return '';
+  const s = getItemState(it.id);
+  const bothDone = s.android && s.iphone;
+  if (onlyUnchecked && bothDone) return '';
+  const oneDone = !bothDone && (s.android || s.iphone);
+  const cls = bothDone ? 'done-all' : (oneDone ? 'done-one' : '');
   return `
-    <label class="item${checked ? ' done' : ''}" data-id="${it.id}">
-      <input type="checkbox" ${checked ? 'checked' : ''} data-id="${it.id}">
+    <div class="item${cls ? ' ' + cls : ''}" data-id="${it.id}">
+      <div class="platform-boxes">
+        <label class="platform-check android">
+          <input type="checkbox" data-id="${it.id}" data-platform="android" ${s.android ? 'checked' : ''}>
+          <span class="platform-label android">A</span>
+        </label>
+        <label class="platform-check iphone">
+          <input type="checkbox" data-id="${it.id}" data-platform="iphone" ${s.iphone ? 'checked' : ''}>
+          <span class="platform-label iphone">i</span>
+        </label>
+      </div>
       <span class="item-text"><span class="item-id">${it.id}</span>${it.text}</span>
-    </label>
+    </div>
   `;
 }
 
@@ -623,15 +706,20 @@ function updateProgress() {
 document.addEventListener('change', (e) => {
   if (e.target.matches('input[type=checkbox][data-id]')) {
     const id = e.target.dataset.id;
-    state[id] = e.target.checked;
-    save();
-    // Visual update
-    const label = e.target.closest('.item');
-    if (label) {
-      if (e.target.checked) label.classList.add('done');
-      else label.classList.remove('done');
+    const platform = e.target.dataset.platform; // 'android' veya 'iphone'
+    if (!platform) return;
+    setItemState(id, platform, e.target.checked);
+
+    // Item görsel güncelleme (full done / one done)
+    const itemEl = e.target.closest('.item');
+    if (itemEl) {
+      const s = getItemState(id);
+      itemEl.classList.remove('done-all', 'done-one');
+      if (s.android && s.iphone) itemEl.classList.add('done-all');
+      else if (s.android || s.iphone) itemEl.classList.add('done-one');
     }
-    // Update section count
+
+    // Section count update
     const details = e.target.closest('details');
     if (details) {
       const secKey = details.id.replace('sec-', '');
@@ -647,9 +735,9 @@ document.addEventListener('change', (e) => {
       }
     }
     updateProgress();
-    if (onlyUnchecked && e.target.checked) {
-      // Hide just-checked item
-      setTimeout(() => { if (label) label.style.display = 'none'; }, 300);
+
+    if (onlyUnchecked && isItemFullyDone(id)) {
+      setTimeout(() => { if (itemEl) itemEl.style.display = 'none'; }, 300);
     }
   }
 });
