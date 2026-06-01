@@ -48,6 +48,27 @@ export function SystemHealthSection() {
   const [aiOpen, setAiOpen] = useState(false);
   const [aiFails, setAiFails] = useState<AiFailure[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  // 3 Haz 2026 — E2EE Sağlığı: kullanıcı UUID girer → e2ee_public_key + Yol B
+  // backup durumu rapor edilir. Test Push'tan AYRI (push token ≠ e2ee key).
+  const [e2eeUserId, setE2eeUserId] = useState('');
+  const [e2eeResult, setE2eeResult] = useState<any>(null);
+  const [e2eeLoading, setE2eeLoading] = useState(false);
+
+  const checkE2ee = async () => {
+    const id = e2eeUserId.trim();
+    if (!id) { setE2eeResult({ note: 'Kullanıcı UUID gir.' }); return; }
+    setE2eeLoading(true);
+    setE2eeResult(null);
+    try {
+      const { data, error } = await supabase.rpc('rpc_admin_check_e2ee', { p_target_id: id });
+      if (error) { setE2eeResult({ note: 'RPC hata: ' + error.message }); }
+      else { setE2eeResult(data); }
+    } catch (e: any) {
+      setE2eeResult({ note: 'İstisna: ' + (e?.message || e) });
+    } finally {
+      setE2eeLoading(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -224,6 +245,64 @@ export function SystemHealthSection() {
         🟢 sağlıklı · 🔴 gecikmiş/hiç çalışmamış · ⚪ kasıtlı kapalı. Dakikalık cron 5 dk, günlük cron 26 saat eşiğiyle değerlendirilir.
         "Çalıştır" → cron.command tek seferlik tetiklenir, schedule değişmez.
       </p>
+
+      {/* 3 Haz 2026 — E2EE Sağlığı: kullanıcı UUID → public/private key + Yol B
+          backup durumu. Push token ile karıştırılmamalı (ayrı sistem). */}
+      <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2 mt-8">E2EE Sağlığı Kontrolü</h3>
+      <div className="bg-card rounded-lg p-3 border border-white/5">
+        <p className="text-white/40 text-[11px] mb-2 leading-relaxed">
+          Kullanıcı UUID gir → o kullanıcının NaCl anahtar çifti durumu raporlanır:
+          public key DB'de mi (mesaj alabilir mi), Yol B yedeği var mı (yeni cihazda restore olur mu).
+          <span className="text-white/30"> Bu Test Push'tan AYRI — push token başka şey.</span>
+        </p>
+        <div className="flex gap-2">
+          <input
+            value={e2eeUserId}
+            onChange={(e) => setE2eeUserId(e.target.value)}
+            placeholder="Kullanıcı UUID"
+            className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs outline-none focus:border-primary/50 font-mono"
+          />
+          <button
+            onClick={checkE2ee}
+            disabled={e2eeLoading}
+            className="px-4 py-2 rounded-lg text-xs font-bold bg-primary/20 border border-primary/40 disabled:opacity-50"
+          >
+            {e2eeLoading ? 'Kontrol…' : 'Kontrol Et'}
+          </button>
+        </div>
+        {e2eeResult && (
+          <div className="mt-3 bg-black/30 rounded-lg p-3 space-y-1 text-[11px]">
+            {e2eeResult.note && (
+              <p className="text-amber-300">{e2eeResult.note}</p>
+            )}
+            {e2eeResult.found === true && (
+              <>
+                <p className="text-white/80">
+                  <span className="text-white/40">Kullanıcı:</span> <span className="font-bold">{e2eeResult.display_name}</span>
+                  <span className="text-white/40"> · </span>
+                  <span className="font-mono text-white/60">{e2eeResult.username}</span>
+                </p>
+                <p style={{ color: e2eeResult.has_public_key ? '#10B981' : '#EF4444' }}>
+                  {e2eeResult.has_public_key ? '✅' : '❌'} Public Key
+                  {e2eeResult.has_public_key && <span className="text-white/40"> ({e2eeResult.public_key_len} char base64)</span>}
+                  {!e2eeResult.has_public_key && <span className="text-white/40"> — kullanıcı henüz uygulamaya hiç login olmamış</span>}
+                </p>
+                <p style={{ color: e2eeResult.has_backup ? '#10B981' : '#F59E0B' }}>
+                  {e2eeResult.has_backup ? '✅' : '⚠️'} Yol B Backup
+                  {e2eeResult.has_backup && <span className="text-white/40"> ({e2eeResult.backup_len} char) + salt: {e2eeResult.has_salt ? 'var' : 'yok'}</span>}
+                  {!e2eeResult.has_backup && <span className="text-white/40"> — uninstall/reinstall sonrası mesajlar gelmez</span>}
+                </p>
+                {(e2eeResult.is_banned || e2eeResult.is_deleted) && (
+                  <p className="text-red-400">⚠️ Hesap durumu: {e2eeResult.is_banned && 'BANLI '}{e2eeResult.is_deleted && 'SİLİNMİŞ'}</p>
+                )}
+              </>
+            )}
+            {e2eeResult.found === false && (
+              <p className="text-red-300">❌ Kullanıcı bulunamadı (UUID hatalı veya yok)</p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
