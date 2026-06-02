@@ -156,7 +156,7 @@
 <div class="wrap">
   <header>
     <h1>Frejya — Test Listesi</h1>
-    <div class="subtitle">özel · her madde için <strong style="color:#6D28D9">A</strong>ndroid ve <strong style="color:#1A1A1A">i</strong>Phone ayrı tik · her ikisi geçince yeşil sayılır</div>
+    <div class="subtitle">özel · <strong style="color:#6D28D9">A</strong>ndroid + <strong style="color:#1A1A1A">i</strong>Phone ayrı tik · her ikisi yeşil sayılır · <span id="sync-badge" style="font-weight: 600;">⏳ Yükleniyor...</span></div>
     <div class="progress-bar">
       <div class="progress-fill" id="pf" style="width: 0%"></div>
     </div>
@@ -544,34 +544,110 @@ const CHECKLIST = [
     ]},
 ];
 
-// ─── State (localStorage) ───
-// v2 format: state[id] = { android: bool, iphone: bool }
-// v1 backward compat: state[id] = true (eski tek-checkbox) → her ikisi true sayilir
+// ─── State (Supabase + localStorage fallback) ───
+// 2 Haz 2026: kullanıcı raporu "tikler kalıcı olmuyor". localStorage browser-spesifik
+// → private mode/cache temizliği/farklı cihaz = kayıp. Çözüm: Supabase'e cloud sync.
+// localStorage hâlâ offline fallback olarak korunur.
+const SUPA_URL = 'https://fgbnngtsecmxrqjoplmh.supabase.co';
+const SUPA_KEY = 'sb_publishable_qHSMPVngoGSBYzOzXUgRsQ_tlBtnt_F';
+const USER_KEY = 'mxQy7zPa3k'; // URL slug — primary key DB'de
+
 const STORAGE_KEY = 'frejya_checklist_v2';
 const OLD_STORAGE_KEY = 'frejya_checklist_v1';
 let state = {};
+let syncStatus = 'init'; // init / syncing / synced / offline / error
 
-function loadState() {
-  // v2 var mi?
+// Supabase REST API ile direkt fetch (SDK'sız, daha hafif)
+async function cloudGet() {
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/master_checklist_state?user_key=eq.${USER_KEY}&select=state`, {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
+    });
+    if (!res.ok) throw new Error('cloud get fail ' + res.status);
+    const rows = await res.json();
+    return rows[0]?.state || null;
+  } catch(e) { console.warn('cloudGet:', e); return null; }
+}
+
+async function cloudSet(newState) {
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/master_checklist_state?on_conflict=user_key`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ user_key: USER_KEY, state: newState })
+    });
+    if (!res.ok) throw new Error('cloud set fail ' + res.status);
+    syncStatus = 'synced';
+    updateSyncBadge();
+  } catch(e) {
+    console.warn('cloudSet:', e);
+    syncStatus = 'offline';
+    updateSyncBadge();
+  }
+}
+
+// LocalStorage fallback (offline)
+function localLoad() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) { state = JSON.parse(raw); return; }
+    if (raw) return JSON.parse(raw);
   } catch(e) {}
-  // v1'den geç (legacy)
+  // v1 migration
   try {
     const oldRaw = localStorage.getItem(OLD_STORAGE_KEY);
     if (oldRaw) {
       const old = JSON.parse(oldRaw);
+      const migrated = {};
       Object.keys(old).forEach(id => {
-        if (old[id] === true) {
-          state[id] = { android: true, iphone: true };
-        }
+        if (old[id] === true) migrated[id] = { android: true, iphone: true };
       });
-      save();
-      return;
+      return migrated;
     }
   } catch(e) {}
-  state = {};
+  return {};
+}
+
+async function loadState() {
+  syncStatus = 'syncing';
+  updateSyncBadge();
+  // 1) Önce cloud'dan dene
+  const cloud = await cloudGet();
+  if (cloud) {
+    state = cloud;
+    // localStorage'a da yaz (offline cache)
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+    syncStatus = 'synced';
+    updateSyncBadge();
+    return;
+  }
+  // 2) Cloud yoksa local'dan
+  state = localLoad();
+  // 3) Local'ı cloud'a push et (ilk sync)
+  if (Object.keys(state).length > 0) {
+    await cloudSet(state);
+  } else {
+    syncStatus = 'synced';
+    updateSyncBadge();
+  }
+}
+
+function updateSyncBadge() {
+  const el = document.getElementById('sync-badge');
+  if (!el) return;
+  const txt = {
+    init: '⏳ Yükleniyor...',
+    syncing: '⏳ Senkron...',
+    synced: '☁ Senkron ✓',
+    offline: '⚠ Çevrimdışı (yerel kayıt)',
+    error: '✗ Sync hata'
+  };
+  el.textContent = txt[syncStatus] || '';
+  el.style.color = syncStatus === 'synced' ? '#16A34A' : syncStatus === 'offline' ? '#B8782F' : '#5A5249';
 }
 
 function getItemState(id) {
@@ -593,10 +669,25 @@ function setItemState(id, platform, checked) {
   save();
 }
 
-loadState();
 let onlyUnchecked = false;
 
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+// Debounce cloud sync (her tıkta hemen değil, 500ms beklet)
+let saveTimer = null;
+function save() {
+  // Local instant
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+  // Cloud debounced
+  if (saveTimer) clearTimeout(saveTimer);
+  syncStatus = 'syncing';
+  updateSyncBadge();
+  saveTimer = setTimeout(() => { cloudSet(state); }, 500);
+}
+
+// Sayfa açılınca state yükle, sonra render
+loadState().then(() => {
+  renderAll();
+  updateProgress();
+});
 
 // Bir madde "tamamlandı" = HER İKİ platform işaretli
 function isItemFullyDone(id) {
@@ -798,8 +889,7 @@ document.getElementById('import-btn').addEventListener('click', () => {
   } catch(e) { alert('Geçersiz JSON.'); }
 });
 
-// ─── Init ───
-renderAll();
+// ─── Init: loadState yukarıda yapıldı (async), o tamamlanınca render çalışır
 updateProgress();
 </script>
 </body>
