@@ -22,6 +22,13 @@ const CATS: { key: string; label: string; hint?: string }[] = [
 const TIERS: (keyof TierVals)[] = ['normal', 'verified', 'premium'];
 const TIER_LABEL: Record<string, string> = { normal: 'Normal', verified: 'Doğrulanmış', premium: 'Premium' };
 
+// Tier'a bağlı OLMAYAN tek-değerli kotalar (config[key] = { value: N }).
+// 8 Haz 2026: sohbet bitince otomatik karşılıklı engel SÜRESİ (gün). Manuel
+// "Engelle ve Bildir" KALICI'dır, bu değerden etkilenmez.
+const UNIFORM_CATS: { key: string; label: string; hint?: string }[] = [
+  { key: 'chat_block_days', label: 'Sohbet sonu engel süresi (gün)', hint: 'otomatik geçici engel; manuel engel kalıcıdır' },
+];
+
 export function QuotasSection() {
   const [cfg, setCfg] = useState<QuotaConfig | null>(null);
   const [orig, setOrig] = useState<QuotaConfig | null>(null);
@@ -44,15 +51,26 @@ export function QuotasSection() {
     setCfg((prev) => prev ? { ...prev, [cat]: { ...prev[cat], [tier]: (n as any) } } : prev);
   };
 
+  // Tek-değerli (tier'sız) kota seti: config[cat] = { value: N }
+  const setUniform = (cat: string, v: string) => {
+    const n = v === '' || v === '-' ? v : parseInt(v, 10);
+    setCfg((prev) => prev ? { ...prev, [cat]: ({ value: n } as any) } : prev);
+  };
+
   const save = async () => {
     if (!cfg || !orig) return;
     // Post FIFO azaltma uyarısı (veri silinir)
     const fifoDown = TIERS.some((t) => Number(cfg.post_fifo?.[t]) < Number(orig.post_fifo?.[t]));
     if (fifoDown && !window.confirm('Post tavanı (FIFO) DÜŞÜRÜLÜYOR. Bu, limiti aşan kullanıcıların EN ESKİ postlarını bir sonraki post atışında KALICI siler. Devam edilsin mi?')) return;
-    // boş/geçersiz kontrol
+    // boş/geçersiz kontrol (per-tier)
     for (const c of CATS) for (const t of TIERS) {
       const v = Number((cfg[c.key] as any)?.[t]);
       if (!Number.isFinite(v)) { setMsg(`Geçersiz değer: ${c.label} / ${TIER_LABEL[t]}`); return; }
+    }
+    // boş/geçersiz kontrol (tek-değerli — en az 1)
+    for (const c of UNIFORM_CATS) {
+      const v = Number((cfg[c.key] as any)?.value);
+      if (!Number.isFinite(v) || v < 1) { setMsg(`Geçersiz değer: ${c.label} (en az 1)`); return; }
     }
     setBusy(true); setMsg('');
     const { error } = await supabase.from('app_quotas')
@@ -94,6 +112,24 @@ export function QuotasSection() {
                 </label>
               ))}
             </div>
+          </div>
+        ))}
+        {UNIFORM_CATS.map((c) => (
+          <div key={c.key} className="bg-card rounded-xl p-4 border border-white/5">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-teal-400 font-bold text-[12px]">{c.label}</span>
+              {c.hint && <span className="text-amber-400/80 text-[10px]">{c.hint}</span>}
+            </div>
+            <label className="flex flex-col gap-1 max-w-[120px]">
+              <span className="text-white/40 text-[10px]">Gün</span>
+              <input
+                type="number"
+                min={1}
+                value={String((cfg[c.key] as any)?.value ?? '')}
+                onChange={(e) => setUniform(c.key, e.target.value)}
+                className="bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-teal-500/50"
+              />
+            </label>
           </div>
         ))}
       </div>
