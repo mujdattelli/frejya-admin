@@ -5,6 +5,8 @@ import { PhotosSection } from '../sections/PhotosSection';
 import { HistorySection } from '../sections/HistorySection';
 import { SupportSection } from '../sections/SupportSection';
 import { ReportsSection } from '../sections/ReportsSection';
+import { LoginIssuesSection } from '../sections/LoginIssuesSection';
+import { QuotasSection } from '../sections/QuotasSection';
 import { SettingsSection } from '../sections/SettingsSection';
 import { ApiMonitorSection } from '../sections/ApiMonitorSection';
 import { SystemHealthSection } from '../sections/SystemHealthSection';
@@ -22,10 +24,12 @@ export const SECTIONS = [
   { key: 'photos', label: 'Fotoğraf Onayı', color: '#C0A080' },
   { key: 'support', label: 'İstekler', color: '#14B8A6' },
   { key: 'reports', label: 'Şikayetler', color: '#EF4444' },
+  { key: 'loginissues', label: 'Giriş Sorunları', color: '#F59E0B' },
   { key: 'roles', label: 'Yetkiler & Premium', color: '#C0A080', masterOnly: true },
   { key: 'banned', label: 'Banlılar', color: '#F59E0B' },
   { key: 'history', label: 'Karar Geçmişi', color: '#F59E0B' },
   { key: 'audit', label: 'Denetim Kaydı', color: '#60A5FA', masterOnly: true },
+  { key: 'quotas', label: 'Kotalar', color: '#14B8A6', masterOnly: true },
   { key: 'settings', label: 'Ayarlar', color: '#10B981', masterOnly: true },
   { key: 'api', label: 'API İzleme', color: '#A855F7', masterOnly: true },
   { key: 'health', label: 'Sistem Sağlığı', color: '#10B981', masterOnly: true },
@@ -120,10 +124,12 @@ export function Dashboard({ email, role }: { email: string; role: string }) {
         {active === 'photos' && <PhotosSection />}
         {active === 'support' && <SupportSection />}
         {active === 'reports' && <ReportsSection />}
+        {active === 'loginissues' && <LoginIssuesSection />}
         {active === 'roles' && role === 'master' && <RolesSection />}
         {active === 'banned' && <BannedSection />}
         {active === 'history' && <HistorySection />}
         {active === 'audit' && role === 'master' && <AuditLogSection />}
+        {active === 'quotas' && role === 'master' && <QuotasSection />}
         {active === 'settings' && role === 'master' && <SettingsSection />}
         {active === 'api' && role === 'master' && <ApiMonitorSection />}
         {active === 'health' && role === 'master' && <SystemHealthSection />}
