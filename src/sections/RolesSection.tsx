@@ -52,14 +52,18 @@ export function RolesSection() {
     if (rows.length === 0) setMsg('Sonuç yok.');
   };
 
-  const toggleAdmin = async (u: RoleUser) => {
-    const makeAdmin = u.role !== 'master';
-    const newRole = makeAdmin ? 'master' : 'user';
+  // 9 Haz 2026: 4 rol (user / moderator / reviewer / master). Eski tek-buton
+  // user↔master toggle yerine rol seçici. RPC zaten 4 rolü kabul ediyor.
+  const ROLE_DESC: Record<string, string> = {
+    user: 'Normal kullanıcı — yönetim paneli erişimi yok.',
+    moderator: 'Yalnız moderasyon sekmeleri (foto onayı, şikayet, ban, istekler).',
+    reviewer: 'Test/inceleme hesabı — AI foto onayını bypass eder (App Store review).',
+    master: 'Tüm yönetim paneline + hassas işlemlere (premium/rol/API key) erişir.',
+  };
+  const changeRole = async (u: RoleUser, newRole: string) => {
+    if (!newRole || newRole === u.role) return;
     const ok = window.confirm(
-      `"${u.displayName}" → ${makeAdmin ? 'ADMIN (master)' : 'normal kullanıcı'}\n\n` +
-        (makeAdmin
-          ? 'Bu kullanıcı tüm yönetim paneline erişebilecek.'
-          : 'Bu kullanıcının yönetim paneli erişimi kaldırılacak.')
+      `"${u.displayName}" rolü → ${roleLabel(newRole)}\n\n${ROLE_DESC[newRole] || ''}`
     );
     if (!ok) return;
     setBusy(u.id);
@@ -67,7 +71,7 @@ export function RolesSection() {
     setBusy(null);
     if (error) { setMsg('Hata: ' + error.message); return; }
     setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: newRole } : x)));
-    setMsg(`${u.displayName} → ${makeAdmin ? 'Admin' : 'Normal kullanıcı'}`);
+    setMsg(`${u.displayName} → ${roleLabel(newRole)}`);
   };
 
   const applyVerified = async (u: RoleUser, makeVerified: boolean) => {
@@ -148,17 +152,18 @@ export function RolesSection() {
                   >
                     Detay
                   </button>
-                  <button
-                    onClick={() => toggleAdmin(u)}
+                  <select
+                    value={u.role}
                     disabled={rowBusy}
-                    className={`text-xs font-bold rounded-lg px-3 py-2 border disabled:opacity-50 ${
-                      u.role === 'master'
-                        ? 'text-red-400 border-red-500/40 bg-red-500/10'
-                        : 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10'
-                    }`}
+                    onChange={(e) => changeRole(u, e.target.value)}
+                    title="Rol değiştir"
+                    className="text-xs font-bold rounded-lg px-2 py-2 border border-white/15 bg-black/40 text-white/80 outline-none focus:border-primary/50 disabled:opacity-50"
                   >
-                    {u.role === 'master' ? 'Yetkiyi Kaldır' : 'Admin Yap'}
-                  </button>
+                    <option value="user">Normal Kullanıcı</option>
+                    <option value="moderator">Moderatör</option>
+                    <option value="reviewer">Test (Reviewer)</option>
+                    <option value="master">Admin (Master)</option>
+                  </select>
                 </div>
               </div>
 

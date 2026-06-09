@@ -53,6 +53,10 @@ export function SystemHealthSection() {
   const [e2eeUserId, setE2eeUserId] = useState('');
   const [e2eeResult, setE2eeResult] = useState<any>(null);
   const [e2eeLoading, setE2eeLoading] = useState(false);
+  // 9 Haz 2026 — Test Push: kullanıcı UUID → o cihaza test bildirimi (rpc_admin_test_push).
+  const [testPushUserId, setTestPushUserId] = useState('');
+  const [testPushResult, setTestPushResult] = useState<any>(null);
+  const [testPushLoading, setTestPushLoading] = useState(false);
 
   const checkE2ee = async () => {
     const id = e2eeUserId.trim();
@@ -67,6 +71,22 @@ export function SystemHealthSection() {
       setE2eeResult({ note: 'İstisna: ' + (e?.message || e) });
     } finally {
       setE2eeLoading(false);
+    }
+  };
+
+  const sendTestPush = async () => {
+    const id = testPushUserId.trim();
+    if (!id) { setTestPushResult({ note: 'Kullanıcı UUID gir.' }); return; }
+    setTestPushLoading(true);
+    setTestPushResult(null);
+    try {
+      const { data, error } = await supabase.rpc('rpc_admin_test_push', { p_target_id: id });
+      if (error) { setTestPushResult({ note: 'RPC hata: ' + error.message }); }
+      else { setTestPushResult(data); }
+    } catch (e: any) {
+      setTestPushResult({ note: 'İstisna: ' + (e?.message || e) });
+    } finally {
+      setTestPushLoading(false);
     }
   };
 
@@ -300,6 +320,40 @@ export function SystemHealthSection() {
             {e2eeResult.found === false && (
               <p className="text-red-300">❌ Kullanıcı bulunamadı (UUID hatalı veya yok)</p>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* 9 Haz 2026 — Test Push: kullanıcı UUID → o cihaza test bildirimi
+          (rpc_admin_test_push, master-only). E2EE kontrolünden AYRI. */}
+      <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2 mt-8">Test Push (Bildirim)</h3>
+      <div className="bg-card rounded-lg p-3 border border-white/5">
+        <p className="text-white/40 text-[11px] mb-2 leading-relaxed">
+          Kullanıcı UUID gir → o kullanıcının kayıtlı cihazına test push bildirimi gönderilir.
+          Token yoksa "gönderilemedi (token yok)" döner (normal).
+        </p>
+        <div className="flex gap-2">
+          <input
+            value={testPushUserId}
+            onChange={(e) => setTestPushUserId(e.target.value)}
+            placeholder="Kullanıcı UUID"
+            className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs outline-none focus:border-primary/50 font-mono"
+          />
+          <button
+            onClick={sendTestPush}
+            disabled={testPushLoading}
+            className="px-4 py-2 rounded-lg text-xs font-bold bg-primary/20 border border-primary/40 disabled:opacity-50"
+          >
+            {testPushLoading ? 'Gönder…' : 'Test Push Gönder'}
+          </button>
+        </div>
+        {testPushResult && (
+          <div className="mt-3 bg-black/30 rounded-lg p-3 text-[11px]">
+            {testPushResult.sent === true && <p className="text-emerald-400">✅ Push gönderildi.</p>}
+            {testPushResult.sent === false && (
+              <p className="text-amber-300">⚠️ Gönderilemedi{testPushResult.reason ? ` (${testPushResult.reason})` : ''}.</p>
+            )}
+            {testPushResult.note && <p className="text-white/60 mt-1">{testPushResult.note}</p>}
           </div>
         )}
       </div>
