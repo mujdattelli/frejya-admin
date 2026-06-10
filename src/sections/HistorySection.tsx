@@ -32,9 +32,24 @@ export function HistorySection() {
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc('rpc_admin_list_photo_history', { p_limit: limit });
-    setLoading(false);
-    if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
+    if (error) { setLoading(false); setMsg('Yükleme hatası: ' + error.message); return; }
     const list = (data as HistoryItem[]) || [];
+    // FAZ 2 (9 Haz 2026) sonrası fotolar private 'faces' bucket'te → signed URL gerek.
+    // Edge fn 'admin-sign-face-urls' master/moderator/reviewer için batch imzalar.
+    if (list.length > 0) {
+      try {
+        const ids = list.map((h) => h.id);
+        const { data: sig } = await supabase.functions.invoke('admin-sign-face-urls', { body: { ids } });
+        const urls = (sig?.urls || {}) as Record<string, string | null>;
+        for (const h of list) {
+          const u = urls[h.id];
+          if (u) h.profile_picture_url = u;
+        }
+      } catch (e) {
+        console.warn('[HistorySection] signed-url alinmadi:', e);
+      }
+    }
+    setLoading(false);
     setItems(list);
     setHasMore(list.length === limit);
   }, [limit]);
