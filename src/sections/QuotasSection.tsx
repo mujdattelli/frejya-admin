@@ -2,10 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, StatusMessage } from '../components/ui';
 
-// 7 Haz 2026: KOTALAR — tüm limitler config-driven (app_quotas tablosu). Buradan
-// değiştirilince RPC'ler/trigger'lar quota_val() ile otomatik yeni değeri okur.
-// -1 = SINIRSIZ. Artırmak güvenli; azaltmak da güvenli (takip: mevcut korunur/grandfather,
-// günlükler: ertesi gün) — TEK İSTİSNA: Post tavanı (FIFO) azaltınca eski postlar silinir.
 type TierVals = { normal: number; verified: number; premium: number };
 type QuotaConfig = Record<string, TierVals>;
 
@@ -22,9 +18,6 @@ const CATS: { key: string; label: string; hint?: string }[] = [
 const TIERS: (keyof TierVals)[] = ['normal', 'verified', 'premium'];
 const TIER_LABEL: Record<string, string> = { normal: 'Normal', verified: 'Doğrulanmış', premium: 'Premium' };
 
-// Tier'a bağlı OLMAYAN tek-değerli kotalar (config[key] = { value: N }).
-// 8 Haz 2026: sohbet bitince otomatik karşılıklı engel SÜRESİ (gün). Manuel
-// "Engelle ve Bildir" KALICI'dır, bu değerden etkilenmez.
 const UNIFORM_CATS: { key: string; label: string; hint?: string }[] = [
   { key: 'chat_block_days', label: 'Sohbet sonu engel süresi (gün)', hint: 'otomatik geçici engel; manuel engel kalıcıdır' },
 ];
@@ -51,7 +44,6 @@ export function QuotasSection() {
     setCfg((prev) => prev ? { ...prev, [cat]: { ...prev[cat], [tier]: (n as any) } } : prev);
   };
 
-  // Tek-değerli (tier'sız) kota seti: config[cat] = { value: N }
   const setUniform = (cat: string, v: string) => {
     const n = v === '' || v === '-' ? v : parseInt(v, 10);
     setCfg((prev) => prev ? { ...prev, [cat]: ({ value: n } as any) } : prev);
@@ -59,15 +51,12 @@ export function QuotasSection() {
 
   const save = async () => {
     if (!cfg || !orig) return;
-    // Post FIFO azaltma uyarısı (veri silinir)
     const fifoDown = TIERS.some((t) => Number(cfg.post_fifo?.[t]) < Number(orig.post_fifo?.[t]));
     if (fifoDown && !window.confirm('Post tavanı (FIFO) DÜŞÜRÜLÜYOR. Bu, limiti aşan kullanıcıların EN ESKİ postlarını bir sonraki post atışında KALICI siler. Devam edilsin mi?')) return;
-    // boş/geçersiz kontrol (per-tier)
     for (const c of CATS) for (const t of TIERS) {
       const v = Number((cfg[c.key] as any)?.[t]);
       if (!Number.isFinite(v)) { setMsg(`Geçersiz değer: ${c.label} / ${TIER_LABEL[t]}`); return; }
     }
-    // boş/geçersiz kontrol (tek-değerli — en az 1)
     for (const c of UNIFORM_CATS) {
       const v = Number((cfg[c.key] as any)?.value);
       if (!Number.isFinite(v) || v < 1) { setMsg(`Geçersiz değer: ${c.label} (en az 1)`); return; }

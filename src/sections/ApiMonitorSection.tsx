@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading } from '../components/ui';
 
-// API İzleme — Gemini kotaları ve anahtar kullanımının salt-okunur görünümü.
 type ApiKey = { key: string; status?: string; usage_count?: number; limit?: number; [k: string]: any };
 
 const maskKey = (k: string) =>
@@ -14,8 +13,6 @@ export function ApiMonitorSection() {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  // 30 May 2026: CANLI izleme — her 5 saniyede bir otomatik yenilenir.
-  // Worker foto onayladıkça dailyUsage artışı sayfa yenilemeden görünür.
   useEffect(() => {
     let active = true;
     const fetchKeys = async () => {
@@ -29,7 +26,7 @@ export function ApiMonitorSection() {
       setLoading(false);
     };
     fetchKeys();
-    const interval = setInterval(fetchKeys, 5000); // 5 sn'de bir canlı yenile
+    const interval = setInterval(fetchKeys, 5000);
     return () => { active = false; clearInterval(interval); };
   }, []);
 
@@ -52,9 +49,6 @@ export function ApiMonitorSection() {
       <h3 className="text-emerald-400 text-xs font-bold uppercase tracking-widest mb-2">Ücretsiz Havuz</h3>
       {freeKeys.length === 0 && <p className="text-white/40 text-xs mb-3">Anahtar yok.</p>}
       {freeKeys.map((k, i) => {
-        // Worker (ai-profile-verification-worker) sayacı `dailyUsage` alanına
-        // yazar; panel eskiden `usage_count` okuyordu → hep 0 görünüyordu.
-        // 30 May 2026: dailyUsage öncelikli, usage_count geriye dönük fallback.
         const used = k.dailyUsage ?? k.usage_count ?? 0;
         const total = k.limit || 1050;
         return (
@@ -72,7 +66,6 @@ export function ApiMonitorSection() {
       <h3 className="text-red-400 text-xs font-bold uppercase tracking-widest mb-2 mt-4">Ücretli Havuz</h3>
       {paidKeys.length === 0 && <p className="text-white/40 text-xs">Anahtar yok.</p>}
       {paidKeys.map((k, i) => {
-        // Worker `dailyUsage` yazar (bkz. ücretsiz havuz notu).
         const used = k.dailyUsage ?? k.usage_count ?? 0;
         const total = k.limit || 500;
         return (

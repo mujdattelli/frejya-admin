@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, StatusMessage } from '../components/ui';
 
-// Ayarlar — dinamik AI API anahtarları (ücretsiz/ücretli).
 type ApiKey = { key: string; status?: string; usage_count?: number; limit?: number; [k: string]: unknown };
 
 export function SettingsSection() {
@@ -11,7 +10,6 @@ export function SettingsSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
-  // Açık (maskesi kaldırılmış) anahtarlar — varsayılan hepsi maskeli.
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const toggleReveal = (id: string) =>
     setRevealed((prev) => {
@@ -34,7 +32,6 @@ export function SettingsSection() {
   const normKey = (k: any): ApiKey =>
     typeof k === 'string' ? { key: k, status: 'active', usage_count: 0, limit: 100 } : k;
 
-  // Kaydetme master-only RPC'den geçer — ham upsert worker sayaçlarını eziyordu.
   const saveKeys = async () => {
     setSaving(true); setMsg('');
     const { data, error } = await supabase.rpc('rpc_admin_save_api_keys', {
@@ -68,8 +65,6 @@ export function SettingsSection() {
         const shown = revealed.has(id);
         return (
           <div key={i} className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1.5 mb-2 border border-white/10">
-            {/* Anahtarlar varsayılan maskeli — omuz sörfü / ekran paylaşımı
-                sızıntısına karşı. "Göster" ile geçici olarak açılır. */}
             <input
               type={shown ? 'text' : 'password'}
               autoComplete="off"

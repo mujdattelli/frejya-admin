@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, StatusMessage } from '../components/ui';
 
-// Genel Bakış — bekleyen iş + kullanıcı sayaçları (rpc_admin_dashboard_stats).
-// 22 May 2026: panelde hiç özet yoktu; admin her sekmeyi tek tek açmak zorundaydı.
 type Stats = {
   pending_photos: number;
   pending_reports: number;
@@ -25,11 +23,8 @@ export function OverviewSection({ onNavigate }: { onNavigate?: (section: string)
     setStats(data as Stats);
   }, []);
 
-  // 31 May 2026: otomatik yenileme — realtime'a EK olarak 5 sn polling.
   useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
-  // Realtime: bekleyen iş sayaçları (foto/şikayet/destek/ban/üye) değişince
-  // dashboard F5'siz canlı güncellensin — diğer sekmelerle tutarlı.
   useEffect(() => {
     const ch = supabase.channel('admin-overview-section');
     for (const table of ['public_profiles', 'suspicious_activities', 'support_tickets', 'private_users']) {
@@ -43,7 +38,6 @@ export function OverviewSection({ onNavigate }: { onNavigate?: (section: string)
   if (msg) return <StatusMessage text={msg} />;
   if (!stats) return null;
 
-  // section: tıklanınca gidilecek sekme (Dashboard SECTIONS key'leri).
   const cards: { label: string; value: number; color: string; urgent?: boolean; section?: string }[] = [
     { label: 'Onay bekleyen fotoğraf', value: stats.pending_photos, color: '#C0A080', urgent: stats.pending_photos > 0, section: 'photos' },
     { label: 'Bekleyen şikayet', value: stats.pending_reports, color: '#EF4444', urgent: stats.pending_reports > 0, section: 'reports' },

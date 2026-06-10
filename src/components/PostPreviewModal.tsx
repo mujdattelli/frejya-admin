@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-// Şikayet edilen Aura gönderisinin içeriğini gösteren modal.
-// Veri master/moderator-only `rpc_admin_get_post`'tan gelir.
 type Post = {
   id: string;
   text: string | null;

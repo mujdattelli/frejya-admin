@@ -2,9 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
-// Banlılar — banlı kullanıcıların listesi + ban kaldırma.
-// 22 May 2026: panelde banlı kullanıcıyı görme / yanlış banı geri alma yolu
-// yoktu. Liste + ban kaldırma master-only `rpc_admin_*` RPC'lerinden geçer.
 type BannedUser = {
   id: string;
   display_name: string | null;
@@ -34,7 +31,6 @@ export function BannedSection() {
     setHasMore(list.length === limit);
   }, [limit]);
 
-  // 31 May 2026: otomatik yenileme — her 5 sn liste tazelenir (manuel F5 yok).
   useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
   const unban = async (u: BannedUser) => {
@@ -49,7 +45,6 @@ export function BannedSection() {
 
   if (loading) return <Loading />;
 
-  // Arama: isim / kullanıcı adı.
   const needle = q.trim().toLowerCase();
   const visible = users.filter((u) => {
     if (!needle) return true;

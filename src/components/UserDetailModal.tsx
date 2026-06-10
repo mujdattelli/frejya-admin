@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-// Kullanıcı detay görünümü — admin bir kullanıcının tam profilini + moderasyon
-// durumunu (rol, ban, uyarı, foto) inceler; buradan ban uygulayıp kaldırabilir.
-// Veri master-only `rpc_admin_user_detail`'den gelir.
 type Detail = {
   id: string;
   display_name?: string | null;

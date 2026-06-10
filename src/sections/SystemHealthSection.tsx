@@ -2,9 +2,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading } from '../components/ui';
 
-// Sistem Sağlığı v3 — cron + foto + AI + arşiv + PUSH HEALTH + manuel tetikleme
-// + AI hata listesi (master-only, 2 Haz 2026 v3 eklentileri).
-// 31 May 2026 Faz 1: tanı. 2 Haz 2026 Faz 2: müdahale (manuel cron + AI detay).
 type Cron = {
   jobname: string;
   schedule: string;
@@ -29,7 +26,6 @@ type AiFailure = {
   level: string | null;
 };
 
-// Cron tazelik eşiği — dakikalık cron 5 dk, günlük cron 26 saat.
 function cronStale(c: Cron): boolean {
   if (!c.active) return false;
   if (!c.last_run) return true;
@@ -42,18 +38,13 @@ export function SystemHealthSection() {
   const [data, setData] = useState<Health | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
-  // v3: her cron için "çalıştır" durumu + son sonuç (success/error mesajı)
   const [runStatus, setRunStatus] = useState<Record<string, { running?: boolean; result?: string; ok?: boolean }>>({});
-  // v3: AI hata listesi (accordion, AI 24s kart'ına tıklayınca açılır)
   const [aiOpen, setAiOpen] = useState(false);
   const [aiFails, setAiFails] = useState<AiFailure[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
-  // 3 Haz 2026 — E2EE Sağlığı: kullanıcı UUID girer → e2ee_public_key + Yol B
-  // backup durumu rapor edilir. Test Push'tan AYRI (push token ≠ e2ee key).
   const [e2eeUserId, setE2eeUserId] = useState('');
   const [e2eeResult, setE2eeResult] = useState<any>(null);
   const [e2eeLoading, setE2eeLoading] = useState(false);
-  // 9 Haz 2026 — Test Push: kullanıcı UUID → o cihaza test bildirimi (rpc_admin_test_push).
   const [testPushUserId, setTestPushUserId] = useState('');
   const [testPushResult, setTestPushResult] = useState<any>(null);
   const [testPushLoading, setTestPushLoading] = useState(false);
@@ -104,7 +95,6 @@ export function SystemHealthSection() {
     return () => { active = false; clearInterval(id); };
   }, []);
 
-  // Manuel cron tetikle (kullanıcı "pg_cron yapsan" — cron.command'ı server-side PERFORM)
   const runCron = async (jobname: string) => {
     setRunStatus(s => ({ ...s, [jobname]: { running: true } }));
     try {
@@ -144,8 +134,6 @@ export function SystemHealthSection() {
   const ph = data.push_health;
   const queueWarn = q.pending > 50;
   const aiWarn = ai.crash > ai.success && ai.crash > 5;
-  // Push warn: kullanıcıların yarısından azı geçerli token taşıyorsa "bildirim
-  // ulaşmıyor" şüphesi var. 100 user altı küçük örnek için warn'ı bastır.
   const pushWarn = ph.total_active >= 100 && ph.valid_expo < ph.total_active * 0.5;
 
   const Card = ({ title, value, sub, warn, onClick }: { title: string; value: string | number; sub?: string; warn?: boolean; onClick?: () => void }) => (
@@ -167,7 +155,6 @@ export function SystemHealthSection() {
         <span className="text-white/60 text-xs">CANLI · 10 sn · son: {new Date(data.checked_at).toLocaleTimeString('tr-TR')}</span>
       </div>
 
-      {/* v3: 5 özet kart (push_health eklendi). AI kart'ı tıklanır → hata listesi */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         <Card title="Foto Kuyruğu" value={q.pending} sub={`işlenen: ${q.processing}`} warn={queueWarn} />
         <Card title="Manuel İnceleme" value={q.needs_manual} warn={q.needs_manual > 0} />
@@ -187,7 +174,6 @@ export function SystemHealthSection() {
         </div>
       )}
 
-      {/* v3: AI hata listesi (accordion) */}
       {aiOpen && (
         <div className="bg-card rounded-lg p-3 border border-white/5 mb-6">
           <p className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2">AI 24s Hata Listesi (en son 30)</p>
@@ -213,7 +199,6 @@ export function SystemHealthSection() {
         </div>
       )}
 
-      {/* v3: Cron tablosu — son hata + Çalıştır butonu eklendi */}
       <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2">Cron İşleri</h3>
       <div className="space-y-1.5">
         {data.crons.map((c) => {
@@ -245,13 +230,11 @@ export function SystemHealthSection() {
                   {rs?.running ? '…' : 'Çalıştır'}
                 </button>
               </div>
-              {/* v3: son HATA mesajı (varsa) — kırmızı şerit */}
               {c.last_error && (
                 <div className="mt-2 pl-5 text-[10px] text-red-300/80 font-mono truncate" title={c.last_error}>
                   ❌ {c.last_error}
                 </div>
               )}
-              {/* v3: manuel çalıştırma sonucu */}
               {rs?.result && (
                 <div className="mt-1 pl-5 text-[10px] font-mono" style={{ color: rs.ok ? '#10B981' : '#EF4444' }}>
                   {rs.result}
@@ -266,8 +249,6 @@ export function SystemHealthSection() {
         "Çalıştır" → cron.command tek seferlik tetiklenir, schedule değişmez.
       </p>
 
-      {/* 3 Haz 2026 — E2EE Sağlığı: kullanıcı UUID → public/private key + Yol B
-          backup durumu. Push token ile karıştırılmamalı (ayrı sistem). */}
       <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2 mt-8">E2EE Sağlığı Kontrolü</h3>
       <div className="bg-card rounded-lg p-3 border border-white/5">
         <p className="text-white/40 text-[11px] mb-2 leading-relaxed">
@@ -324,8 +305,6 @@ export function SystemHealthSection() {
         )}
       </div>
 
-      {/* 9 Haz 2026 — Test Push: kullanıcı UUID → o cihaza test bildirimi
-          (rpc_admin_test_push, master-only). E2EE kontrolünden AYRI. */}
       <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2 mt-8">Test Push (Bildirim)</h3>
       <div className="bg-card rounded-lg p-3 border border-white/5">
         <p className="text-white/40 text-[11px] mb-2 leading-relaxed">

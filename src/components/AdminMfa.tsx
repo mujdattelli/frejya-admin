@@ -2,11 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { BrandMark } from './ui';
 
-// Admin paneli MFA (Supabase native TOTP) — master hesabı için ZORUNLU.
-// App.tsx, oturum AAL2 değilse Dashboard yerine bu ekranı gösterir:
-//   - Doğrulanmış TOTP faktörü varsa  → challenge (6 haneli kod).
-//   - Faktör yoksa                    → enroll (QR + kod ile doğrula).
-// AAL2'ye ulaşılınca onDone() çağrılır → App Dashboard'a geçer.
 type Mode = 'loading' | 'enroll' | 'challenge';
 
 export function AdminMfa({ onDone }: { onDone: () => void }) {
@@ -18,7 +13,6 @@ export function AdminMfa({ onDone }: { onDone: () => void }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
-  // Başlangıç: doğrulanmış faktör var mı? Varsa challenge, yoksa enroll.
   const init = useCallback(async () => {
     setErr('');
     try {
@@ -30,7 +24,6 @@ export function AdminMfa({ onDone }: { onDone: () => void }) {
         setMode('challenge');
         return;
       }
-      // Faktör yok — yeni TOTP faktörü oluştur (enroll).
       const { data: enrolled, error: enrErr } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
         friendlyName: 'Frejya Admin ' + Date.now(),
@@ -47,7 +40,6 @@ export function AdminMfa({ onDone }: { onDone: () => void }) {
 
   useEffect(() => { init(); }, [init]);
 
-  // 6 haneli kodu doğrula — challenge + verify; başarılıysa oturum AAL2 olur.
   const verify = async () => {
     if (!factorId || code.trim().length !== 6) { setErr('6 haneli kodu girin.'); return; }
     setBusy(true); setErr('');

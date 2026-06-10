@@ -5,8 +5,6 @@ import { Login } from './components/Login';
 import { Dashboard } from './components/Dashboard';
 import { AdminMfa } from './components/AdminMfa';
 
-// Ağ takılırsa sonsuza dek "Yükleniyor…" ekranında kalmamak için her
-// Supabase çağrısını bir zaman aşımıyla sarmalar.
 function withTimeout<T>(p: PromiseLike<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const id = setTimeout(() => reject(new Error('timeout')), ms);
@@ -22,8 +20,6 @@ export default function App() {
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-  // MFA durumu: null = henüz bakılmadı, true = oturum AAL2 (MFA tamam),
-  // false = MFA gerekli (enroll veya challenge).
   const [mfaOk, setMfaOk] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -42,7 +38,6 @@ export default function App() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Oturum açıldığında master rolü doğrulanır.
   useEffect(() => {
     if (!session) return;
     setLoading(true);
@@ -53,12 +48,9 @@ export default function App() {
           supabase.from('private_users').select('role').eq('id', session.user.id).single(),
           15000,
         );
-        // PGRST116 = satır yok → kullanıcı private_users'ta değil (yetkisiz),
-        // hata değil; rol null kalır ve "yetkin yok" ekranı gösterilir.
         if (error && error.code !== 'PGRST116') throw error;
         const r = (prof as { role?: string } | null)?.role ?? null;
         setRole(r);
-        // Yetkili hesap (master/moderator) ise MFA seviyesini kontrol et.
         if (r === 'master' || r === 'moderator') {
           const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
           setMfaOk(aal?.currentLevel === 'aal2');
@@ -96,8 +88,6 @@ export default function App() {
     );
   }
   if (!session) return <Login />;
-  // Panele master VE moderator girebilir. Moderatör kısıtlı sekme görür
-  // (Yetkiler/Ayarlar/API hariç) — kısıtlama Dashboard'da + sunucu RPC'lerinde.
   if (role !== 'master' && role !== 'moderator') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4 text-center">
@@ -111,7 +101,6 @@ export default function App() {
       </div>
     );
   }
-  // İki adımlı doğrulama zorunlu — oturum AAL2 değilse panel açılmaz.
   if (mfaOk === false) {
     return <AdminMfa onDone={() => setMfaOk(true)} />;
   }

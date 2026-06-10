@@ -2,11 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
-// 7 Haz 2026: GİRİŞ / GÜVENLİK ADIMI SORUNLARI — ayrı menü.
-// Kullanıcı giriş/captcha (Turnstile) adımında TAKILINCA mobil "Sorunu bildir"
-// butonuna basar → submit_login_issue RPC → login_issue_reports tablosu. Bu kişiler
-// o anda GİRİŞ YAPAMADIĞI için support_tickets'a yazılamaz (FK public_profiles).
-// Cihaz başı bir kez (DB 7 gün guard). Burada hataları görüp "çözüldü" işaretlenir.
 type LoginIssue = {
   id: string;
   entered_username: string | null;
@@ -34,7 +29,6 @@ export function LoginIssuesSection() {
     setItems((data as LoginIssue[]) || []);
   }, []);
 
-  // 5 sn polling + realtime → F5'siz tazelensin.
   useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
   useEffect(() => {
     const ch = supabase

@@ -3,17 +3,11 @@ import { supabase } from '../lib/supabase';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
 import { PostPreviewModal } from '../components/PostPreviewModal';
 
-// Şikayet alıntısındaki `post_id:UUID`'yi ayıklar (Aura gönderi şikayetleri).
 const extractPostId = (s: string | null | undefined): string | null => {
   const m = (s || '').match(/post_id:\s*([0-9a-fA-F-]{36})/);
   return m ? m[1] : null;
 };
 
-// Şikayetler — suspicious_activities; admin uyarı / ban / yok say kararı verir.
-// 22 May 2026: karar artık master-only `rpc_admin_resolve_report` RPC'sinden
-// geçer. Eski ham client yazımı bildirimleri RLS yüzünden sessizce kaybediyor,
-// yanlış tabloya (public_profiles) ban/uyarı yazıyordu. Ayrıca: kullanıcı
-// isimleri çözülür, realtime auto-refresh, sayfalama.
 type Report = {
   id: string;
   threat_category: string | null;
@@ -58,7 +52,6 @@ export function ReportsSection() {
     setReports(pending);
     setHasMore(((data as Report[]) || []).length === limit);
 
-    // Şikayet eden + edilen isimlerini çöz — admin ham UUID görmesin.
     const ids = [...new Set(pending.flatMap((r) => [r.target_id, r.perpetrator_id]).filter(Boolean))];
     if (ids.length > 0) {
       const { data: profs } = await supabase
@@ -69,10 +62,8 @@ export function ReportsSection() {
     }
   }, [limit]);
 
-  // 31 May 2026: otomatik yenileme — realtime'a EK olarak 5 sn polling.
   useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
-  // Realtime: yeni şikayet gelince liste F5'siz tazelensin.
   useEffect(() => {
     const ch = supabase
       .channel('admin-reports-section')
@@ -104,7 +95,6 @@ export function ReportsSection() {
     });
   };
 
-  // Toplu işlem — seçili şikayetleri tek transaction'da "yok say" olarak kapatır.
   const bulkIgnore = async () => {
     const ids = [...selected];
     if (ids.length === 0) return;
@@ -122,10 +112,8 @@ export function ReportsSection() {
 
   const nameOf = (id: string) => names[id] || id;
 
-  // Kategori filtre seçenekleri — yüklü şikayetlerden türetilir.
   const categories = [...new Set(reports.map((r) => r.threat_category).filter(Boolean) as string[])].sort();
 
-  // Arama: şikayet eden/edilen ismi + sebep + alıntı + kategori.
   const needle = q.trim().toLowerCase();
   const visible = reports.filter((r) => {
     if (catFilter && r.threat_category !== catFilter) return false;
@@ -161,7 +149,6 @@ export function ReportsSection() {
           </button>
         )}
       </div>
-      {/* Toplu işlem çubuğu — görünen şikayetler için topluca yok say. */}
       {visible.length > 0 && (
         <div className="flex items-center gap-3 mb-3 text-xs">
           <label className="flex items-center gap-1.5 text-white/60 cursor-pointer">

@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
-// Denetim Kaydı — yönetici eylemlerinin (ban, uyarı, foto kararı, rol vb.)
-// kim/ne zaman/ne yaptı dökümü. Master-only `rpc_admin_list_audit_logs`.
 type AuditRow = {
   id: string;
   action_type: string;
@@ -17,7 +15,6 @@ type AuditRow = {
 
 const PAGE = 50;
 
-// Sık eylem tiplerinin insan-okur Türkçe etiketi.
 const ACTION_LABELS: Record<string, string> = {
   ADMIN_REPORT_WARN: 'Şikayet → Uyarı',
   ADMIN_REPORT_BAN: 'Şikayet → Ban',
@@ -51,12 +48,10 @@ export function AuditLogSection() {
     setHasMore(list.length === limit);
   }, [limit]);
 
-  // 31 May 2026: otomatik yenileme — her 5 sn tazelenir (manuel F5 yok).
   useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
   if (loading) return <Loading />;
 
-  // Arama: eylem tipi (ham + etiket) + uygulayan/hedef isim.
   const needle = q.trim().toLowerCase();
   const visible = rows.filter((r) => {
     if (!needle) return true;

@@ -1,8 +1,4 @@
-// Admin paneli ortak tasarım bileşenleri — tüm bölümlerde tutarlı marka,
-// yükleniyor / boş liste / durum mesajı görünümü (tasarım turu, 22 May 2026).
 
-// Marka işareti — mobil uygulama (FrejyaLogo) ve frejya.app ile birebir aynı
-// anahtar SVG'si + Playfair Display kelime işareti. Logo değişmezdir.
 export function BrandMark({ size = 28, textClass = 'text-xl' }: { size?: number; textClass?: string }) {
   return (
     <span className="inline-flex items-center gap-2">
@@ -24,7 +20,6 @@ export function BrandMark({ size = 28, textClass = 'text-xl' }: { size?: number;
   );
 }
 
-// Tutarlı yükleniyor göstergesi — dönen halka + etiket.
 export function Loading({ label = 'Yükleniyor…' }: { label?: string }) {
   return (
     <div className="flex items-center gap-3 text-white/40 text-sm py-6">
@@ -34,12 +29,10 @@ export function Loading({ label = 'Yükleniyor…' }: { label?: string }) {
   );
 }
 
-// Tutarlı boş liste görünümü.
 export function EmptyState({ text }: { text: string }) {
   return <p className="text-white/35 text-sm py-10 text-center">{text}</p>;
 }
 
-// Durum mesajı — hata anahtar kelimeleri kırmızı, diğerleri (başarı) yeşil.
 export function StatusMessage({ text }: { text: string }) {
   if (!text) return null;
   const isError = /hata|başarısız|bulunamad|geçersiz|yetkisiz|asamaz/i.test(text);

@@ -2,9 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
-// Karar Geçmişi — onaylanmış / reddedilmiş fotoğraflar (salt okunur).
-// Veriler birden çok tablodan geldiği (public_profiles + audit_logs +
-// private_users) ve cross-user RLS engellediği için master-only RPC kullanır.
 type HistoryItem = {
   id: string;
   display_name: string | null;
@@ -34,8 +31,6 @@ export function HistorySection() {
     const { data, error } = await supabase.rpc('rpc_admin_list_photo_history', { p_limit: limit });
     if (error) { setLoading(false); setMsg('Yükleme hatası: ' + error.message); return; }
     const list = (data as HistoryItem[]) || [];
-    // FAZ 2 (9 Haz 2026) sonrası fotolar private 'faces' bucket'te → signed URL gerek.
-    // Edge fn 'admin-sign-face-urls' master/moderator/reviewer için batch imzalar.
     if (list.length > 0) {
       try {
         const ids = list.map((h) => h.id);
@@ -56,7 +51,6 @@ export function HistorySection() {
 
   useEffect(() => {
     load();
-    // Realtime: yeni bir karar verildiğinde geçmiş listesi F5 olmadan tazelensin.
     const channel = supabase
       .channel('admin-history-section')
       .on('postgres_changes',
@@ -69,7 +63,6 @@ export function HistorySection() {
   if (loading) return <Loading />;
   if (msg) return <StatusMessage text={msg} />;
 
-  // Arama: isim/kullanıcı adı/red sebebi. Filtre: onaylı/reddedilen.
   const needle = q.trim().toLowerCase();
   const visible = items.filter((h) => {
     if (filter === 'approved' && h.profile_picture_status !== 'APPROVED') return false;
@@ -131,7 +124,6 @@ export function HistorySection() {
             <p className="text-white/30 text-[10px] truncate">
               {h.username ? '@' + h.username : h.id.slice(0, 8) + '…'} · {evaluator}
             </p>
-            {/* 30 May 2026: onay/red TAM SAATİ (gün-ay-yıl saat:dakika:saniye) */}
             <p className="text-white/50 text-[10px] mt-1">
               🕐 {dateStr
                 ? new Date(dateStr).toLocaleString('tr-TR', {

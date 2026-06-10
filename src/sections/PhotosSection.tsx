@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase';
 import { UserDetailModal } from '../components/UserDetailModal';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
-// Fotoğraf Onayı — AI/manuel onay bekleyen profil fotoğrafları.
 type PendingPhoto = {
   id: string;
   display_name: string | null;
@@ -22,9 +21,6 @@ export function PhotosSection() {
   const [msg, setMsg] = useState('');
   const [detailId, setDetailId] = useState<string | null>(null);
 
-  // Foto-moderasyon kolonları private_users'da; ayrıca RLS admin'in başka
-  // kullanıcının satırını güncellemesine izin vermez. Liste + karar bu yüzden
-  // master-only SECURITY DEFINER RPC'ler üzerinden yapılır.
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase.rpc('rpc_admin_list_pending_photos');
@@ -35,11 +31,7 @@ export function PhotosSection() {
 
   useEffect(() => {
     load();
-    // 31 May 2026: realtime'a EK olarak 5 sn polling (foto onay/red anında düşsün).
     const poll = setInterval(load, 5000);
-    // Realtime: bir foto onaylanır/reddedilir veya yeni PENDING gelirse listeyi
-    // F5 olmadan tazele. Tek admin senaryosunda bile karar verince diğer
-    // sekmeye geçmeden ekranın canlı kalması için.
     const channel = supabase
       .channel('admin-photos-section')
       .on('postgres_changes',
@@ -69,7 +61,7 @@ export function PhotosSection() {
           p_target_id: p.id,
           p_details: { evaluator: 'ADMIN', rejection_count: result.rejection_count, locked: result.locked },
         });
-      } catch { /* audit log opsiyonel — ana işlemi bozmaz */ }
+      } catch { }
 
       setPhotos((prev) => prev.filter((x) => x.id !== p.id));
       setMsg(isApproved ? 'Fotoğraf onaylandı.' : 'Fotoğraf reddedildi.');

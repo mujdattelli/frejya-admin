@@ -2,12 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
-// İstekler — kullanıcı destek/dilek talepleri (support_tickets, status='pending').
-// 22 May 2026: yanıt artık master-only `rpc_admin_reply_ticket` RPC'sinden geçer
-// (ham client INSERT bildirimi RLS yüzünden sessizce kayboluyordu).
-// 26 May 2026: gönderen MAIL ADRESİ olarak gösterilir (kullanıcı kararı:
-// "İstekler mail adresi"). Email auth.users'dan rpc_admin_get_user_emails
-// ile çekilir; display_name yanına ek satır olarak yazılır.
 type Ticket = {
   id: string;
   sender_id: string;
@@ -44,8 +38,6 @@ export function SupportSection() {
     setTickets(rows);
     setHasMore(rows.length === limit);
 
-    // Gönderen MAİL adreslerini ve isimlerini çöz — admin ham UUID değil
-    // gerçek mail görsün (auth.users.email master-only RPC ile).
     const ids = [...new Set(rows.map((r) => r.sender_id).filter(Boolean))];
     if (ids.length > 0) {
       const { data: emails } = await supabase.rpc('rpc_admin_get_user_emails', { p_ids: ids });
@@ -60,10 +52,8 @@ export function SupportSection() {
     }
   }, [limit]);
 
-  // 31 May 2026: otomatik yenileme — realtime'a EK olarak 5 sn polling.
   useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
-  // Realtime: yeni destek talebi gelince / çözülünce liste F5'siz tazelensin.
   useEffect(() => {
     const ch = supabase
       .channel('admin-support-section')
@@ -89,7 +79,6 @@ export function SupportSection() {
 
   if (loading) return <Loading />;
 
-  // Arama: gönderen MAİL + isim + mesaj içeriği.
   const needle = q.trim().toLowerCase();
   const visible = tickets.filter((t) => {
     if (!needle) return true;

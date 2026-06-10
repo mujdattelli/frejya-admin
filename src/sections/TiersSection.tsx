@@ -2,13 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
 
-// Kullanıcılar — Kademe bazlı liste + sayım.
-// Kullanıcı kararı (26 May 2026): "Normal / Onaylı / Premium kullanıcıları
-// göreceğim bir menü lazım. Adetlerini de yazsın."
-//
-// Backend: rpc_admin_get_tier_stats + rpc_admin_list_users_by_tier (master-only).
-// Tier tanımları kural.md §11.1 ile uyumlu — Premium > Verified > Normal
-// (exclusive — bir kullanıcı tek tier'de sayılır).
 
 type Tier = 'normal' | 'verified' | 'premium';
 
@@ -47,7 +40,6 @@ export function TiersSection() {
   const [searching, setSearching] = useState(false);
   const [msg, setMsg] = useState('');
 
-  // Sayımlar — sayfa açılışında 1 kez + tier değişiminde gerekmez.
   const loadStats = useCallback(async () => {
     const { data, error } = await supabase.rpc('rpc_admin_get_tier_stats');
     if (error) { setMsg('Sayım yüklenemedi: ' + error.message); return; }
@@ -60,7 +52,6 @@ export function TiersSection() {
     });
   }, []);
 
-  // Liste — tier veya arama değişince yeniden.
   const loadUsers = useCallback(async (reset = true) => {
     setSearching(true); setMsg('');
     const newOffset = reset ? 0 : offset;
@@ -90,21 +81,17 @@ export function TiersSection() {
     setHasMore(rows.length === PAGE);
   }, [tier, q, offset]);
 
-  // İlk yükleme — stats + ilk liste paralel.
   useEffect(() => {
     Promise.all([loadStats(), loadUsers(true)]).finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Tier değişimi → liste yenile (ama stats sabit kalır).
   useEffect(() => {
     if (loading) return;
     loadUsers(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tier]);
 
-  // 31 May 2026: otomatik yenileme — tier SAYAÇLARI her 5 sn tazelenir.
-  // Kullanıcı listesi polling'e ALINMADI (sayfalama/scroll/arama bozulmasın).
   useEffect(() => {
     const id = setInterval(() => { loadStats(); }, 5000);
     return () => clearInterval(id);
@@ -116,7 +103,6 @@ export function TiersSection() {
 
   return (
     <div>
-      {/* Sayım kartları — tıklanabilir tier sekmeleri */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         {(Object.keys(TIER_META) as Tier[]).map((t) => {
           const m = TIER_META[t];
@@ -152,7 +138,6 @@ export function TiersSection() {
         Görüntülenen: <span className="text-white/80 font-bold">{TIER_META[tier].label}</span>
       </div>
 
-      {/* Arama */}
       <div className="flex gap-2 mb-4 max-w-xl">
         <input
           value={q}

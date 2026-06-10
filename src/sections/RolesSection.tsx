@@ -3,10 +3,6 @@ import { supabase } from '../lib/supabase';
 import { UserDetailModal } from '../components/UserDetailModal';
 import { StatusMessage } from '../components/ui';
 
-// Yetkiler & Premium & Onaylı — mobil admin panelindeki "Yetkiler" sekmesinin web karşılığı.
-// Aynı RPC'ler: rpc_admin_list_users (arama), rpc_set_user_role (admin yap/çıkar),
-// rpc_admin_set_premium (premium ver/uzat/kaldır), rpc_admin_set_verified (onaylı
-// ver/al — SMS sağlayıcısı yokken köprü çözüm) — hepsi master-only, sunucuda.
 
 type RoleUser = {
   id: string;
@@ -52,8 +48,6 @@ export function RolesSection() {
     if (rows.length === 0) setMsg('Sonuç yok.');
   };
 
-  // 9 Haz 2026: 4 rol (user / moderator / reviewer / master). Eski tek-buton
-  // user↔master toggle yerine rol seçici. RPC zaten 4 rolü kabul ediyor.
   const ROLE_DESC: Record<string, string> = {
     user: 'Normal kullanıcı — yönetim paneli erişimi yok.',
     moderator: 'Yalnız moderasyon sekmeleri (foto onayı, şikayet, ban, istekler).',
@@ -196,8 +190,6 @@ export function RolesSection() {
                 </div>
               </div>
 
-              {/* Onaylı (Verified — mavi tik) — SMS sağlayıcı henüz aktif olmadığı için
-                  master manuel olarak doğrulayabilir. RPC: rpc_admin_set_verified. */}
               <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-white/5">
                 <p className={`text-[11px] ${u.isPhoneVerified ? 'text-blue-400' : 'text-white/40'}`}>
                   {u.isPhoneVerified ? 'Onaylı (mavi tik)' : 'Onaylı değil'}

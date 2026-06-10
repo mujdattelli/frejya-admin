@@ -16,8 +16,6 @@ import { AuditLogSection } from '../sections/AuditLogSection';
 import { TiersSection } from '../sections/TiersSection';
 import { BrandMark } from './ui';
 
-// masterOnly: yalnız master görür. Moderatör bu sekmeleri görmez ve
-// ilgili RPC'ler sunucuda da moderatöre kapalıdır (çift katman).
 export const SECTIONS = [
   { key: 'overview', label: 'Genel Bakış', color: '#60A5FA' },
   { key: 'users', label: 'Kullanıcılar', color: '#3B82F6', masterOnly: true },
@@ -38,12 +36,10 @@ export const SECTIONS = [
 type SectionKey = (typeof SECTIONS)[number]['key'];
 
 export function Dashboard({ email, role }: { email: string; role: string }) {
-  // Moderatör master-only sekmeleri görmez.
   const sections = SECTIONS.filter((s) => role === 'master' || !('masterOnly' in s && s.masterOnly));
   const [active, setActive] = useState<SectionKey>('overview');
   const meta = sections.find((s) => s.key === active) ?? sections[0];
 
-  // 5 dakika hareketsiz kalınca otomatik çıkış (açık unutulan oturum riski).
   useEffect(() => {
     const IDLE_MS = 5 * 60_000;
     let timerId: ReturnType<typeof setTimeout>;
@@ -68,7 +64,6 @@ export function Dashboard({ email, role }: { email: string; role: string }) {
             <BrandMark size={24} textClass="text-lg" />
             <p className="text-white/40 text-xs mt-1">Yönetim Paneli</p>
           </div>
-          {/* Mobilde çıkış butonu üst başlıkta — masaüstünde alt köşede. */}
           <button
             onClick={() => supabase.auth.signOut()}
             className="md:hidden shrink-0 border border-white/15 rounded-lg px-3 py-1.5 text-xs text-white/70 hover:bg-white/5"
