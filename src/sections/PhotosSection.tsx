@@ -12,6 +12,7 @@ type PendingPhoto = {
   photo_rejection_count: number | null;
   last_photo_update_timestamp: number | null;
   created_at: string | null;
+  pending_since: string | null;
 };
 
 export function PhotosSection() {
@@ -26,7 +27,21 @@ export function PhotosSection() {
     const { data, error } = await supabase.rpc('rpc_admin_list_pending_photos');
     setLoading(false);
     if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
-    setPhotos((data as PendingPhoto[]) || []);
+    const list = (data as PendingPhoto[]) || [];
+    if (list.length > 0) {
+      try {
+        const ids = list.map((p) => p.id);
+        const { data: sig } = await supabase.functions.invoke('admin-sign-face-urls', { body: { ids } });
+        const urls = (sig?.urls || {}) as Record<string, string | null>;
+        for (const p of list) {
+          const u = urls[p.id];
+          if (u) p.profile_picture_url = u;
+        }
+      } catch (e) {
+        console.warn('[PhotosSection] signed-url alinmadi:', e);
+      }
+    }
+    setPhotos(list);
   };
 
   useEffect(() => {
@@ -81,17 +96,18 @@ export function PhotosSection() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {photos.map((p) => {
-            const waitMs = Date.now() - new Date(p.last_photo_update_timestamp || p.created_at || Date.now()).getTime();
-            const waitMins = Math.floor(waitMs / 60000);
-            const stuck = waitMins >= 3;
+            const waitMins = p.pending_since
+              ? Math.max(0, Math.floor((Date.now() - new Date(p.pending_since).getTime()) / 60000))
+              : null;
+            const stuck = waitMins != null && waitMins >= 3;
             return (
               <div key={p.id} className={`bg-card rounded-xl p-3 border ${stuck ? 'border-red-500/60' : 'border-white/5'}`}>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-white/50 text-[11px]">
                     {p.profile_picture_status === 'needs_manual_review' ? 'Manuel Onay' : 'AI Bekliyor'}
                   </span>
-                  <span className={`text-[11px] font-bold ${stuck ? 'text-red-400' : waitMins >= 1 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                    {waitMins}dk
+                  <span className={`text-[11px] font-bold ${stuck ? 'text-red-400' : (waitMins ?? 0) >= 1 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                    {waitMins != null ? `${waitMins}dk` : 'yeni'}
                   </span>
                 </div>
                 {p.profile_picture_url ? (
