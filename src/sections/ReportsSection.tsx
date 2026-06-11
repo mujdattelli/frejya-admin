@@ -55,9 +55,9 @@ export function ReportsSection() {
     const ids = [...new Set(pending.flatMap((r) => [r.target_id, r.perpetrator_id]).filter(Boolean))];
     if (ids.length > 0) {
       const { data: profs } = await supabase
-        .from('public_profiles').select('id, display_name, username').in('id', ids);
+        .from('public_profiles').select('id, display_name').in('id', ids);
       const map: Record<string, string> = {};
-      (profs || []).forEach((p: any) => { map[p.id] = p.display_name || p.username || p.id; });
+      (profs || []).forEach((p: any) => { map[p.id] = p.display_name || p.id; });
       setNames(map);
     }
   }, [limit]);
