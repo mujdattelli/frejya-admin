@@ -6,6 +6,7 @@ import { HistorySection } from '../sections/HistorySection';
 import { SupportSection } from '../sections/SupportSection';
 import { ReportsSection } from '../sections/ReportsSection';
 import { LoginIssuesSection } from '../sections/LoginIssuesSection';
+import { DeletionRequestsSection } from '../sections/DeletionRequestsSection';
 import { QuotasSection } from '../sections/QuotasSection';
 import { SettingsSection } from '../sections/SettingsSection';
 import { ApiMonitorSection } from '../sections/ApiMonitorSection';
@@ -23,6 +24,7 @@ export const SECTIONS = [
   { key: 'support', label: 'İstekler', color: '#14B8A6', masterOnly: true },
   { key: 'reports', label: 'Şikayetler', color: '#EF4444', masterOnly: true },
   { key: 'loginissues', label: 'Giriş Sorunları', color: '#F59E0B', masterOnly: true },
+  { key: 'deletion', label: 'Hesap Silme Talepleri', color: '#EF4444', masterOnly: true },
   { key: 'roles', label: 'Yetkiler & Premium', color: '#C0A080', masterOnly: true },
   { key: 'banned', label: 'Banlılar', color: '#F59E0B' },
   { key: 'history', label: 'Karar Geçmişi', color: '#F59E0B' },
@@ -120,6 +122,7 @@ export function Dashboard({ email, role }: { email: string; role: string }) {
         {active === 'support' && <SupportSection />}
         {active === 'reports' && <ReportsSection />}
         {active === 'loginissues' && <LoginIssuesSection />}
+        {active === 'deletion' && role === 'master' && <DeletionRequestsSection />}
         {active === 'roles' && role === 'master' && <RolesSection />}
         {active === 'banned' && <BannedSection />}
         {active === 'history' && <HistorySection />}
