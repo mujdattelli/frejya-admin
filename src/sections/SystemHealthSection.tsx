@@ -48,6 +48,8 @@ export function SystemHealthSection() {
   const [testPushUserId, setTestPushUserId] = useState('');
   const [testPushResult, setTestPushResult] = useState<any>(null);
   const [testPushLoading, setTestPushLoading] = useState(false);
+  const [branches, setBranches] = useState<any[] | null>(null);
+  const [branchErr, setBranchErr] = useState('');
 
   const checkE2ee = async () => {
     const id = e2eeUserId.trim();
@@ -93,6 +95,21 @@ export function SystemHealthSection() {
     load();
     const id = setInterval(load, 10000);
     return () => { active = false; clearInterval(id); };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('admin-branch-status');
+        if (!active) return;
+        if (error) { setBranchErr(error.message); return; }
+        const d = data as any;
+        if (d?.error) { setBranchErr(d.note || d.error); return; }
+        setBranches(d?.branches || []);
+      } catch (e: any) { if (active) setBranchErr(e?.message || String(e)); }
+    })();
+    return () => { active = false; };
   }, []);
 
   const runCron = async (jobname: string) => {
@@ -248,6 +265,29 @@ export function SystemHealthSection() {
         🟢 sağlıklı · 🔴 gecikmiş/hiç çalışmamış · ⚪ kasıtlı kapalı. Dakikalık cron 5 dk, günlük cron 26 saat eşiğiyle değerlendirilir.
         "Çalıştır" → cron.command tek seferlik tetiklenir, schedule değişmez.
       </p>
+
+      <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2 mt-8">Supabase Branch'leri</h3>
+      <div className="bg-card rounded-lg p-3 border border-white/5">
+        {branchErr && <p className="text-amber-300 text-[11px]">⚠️ {branchErr}</p>}
+        {!branchErr && branches === null && <p className="text-white/40 text-xs">Yükleniyor…</p>}
+        {!branchErr && branches && branches.length === 0 && <p className="text-white/40 text-xs">Preview branch yok (yalnız production).</p>}
+        {!branchErr && branches && branches.map((b: any, i: number) => {
+          const failed = String(b.status || '').toUpperCase().includes('FAILED');
+          const healthy = !failed && (b.status === 'FUNCTIONS_DEPLOYED' || b.status === 'MIGRATIONS_PASSED' || b.preview_status === 'ACTIVE_HEALTHY');
+          const dot = failed ? '#EF4444' : healthy ? '#10B981' : '#F59E0B';
+          return (
+            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-white/5 last:border-0">
+              <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ background: dot }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-white/90 text-sm font-mono truncate">{b.name}{b.is_default ? ' · production' : ''}</p>
+                <p className="text-white/40 text-[10px]">{b.status}{b.preview_status ? ` · ${b.preview_status}` : ''}{b.with_data === false ? ' · veri yok' : ''}</p>
+              </div>
+              {b.updated_at && <span className="text-white/40 text-[10px] shrink-0">{new Date(b.updated_at).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>}
+            </div>
+          );
+        })}
+        <p className="text-white/30 text-[10px] mt-2">🔴 MIGRATIONS_FAILED → preview branch bozuk (yeni branch git main'i replay eder). 🟢 sağlıklı · ⚪ diğer. Management PAT Edge Function'da tutulur (client'ta DEĞİL).</p>
+      </div>
 
       <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2 mt-8">E2EE Sağlığı Kontrolü</h3>
       <div className="bg-card rounded-lg p-3 border border-white/5">
