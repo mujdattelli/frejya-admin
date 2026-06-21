@@ -26,6 +26,9 @@ type Detail = {
   ai_rejection_reason?: string | null;
   follower_count?: number | null;
   following_count?: number | null;
+  legal_hold?: boolean | null;
+  legal_hold_reason?: string | null;
+  legal_hold_set_at?: string | null;
 };
 
 export function UserDetailModal({ userId, onClose }: { userId: string; onClose: () => void }) {
@@ -53,6 +56,24 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
     if (error) { setMsg('Hata: ' + error.message); return; }
     setD({ ...d, is_banned: willBan });
     setMsg(willBan ? 'Kullanıcı banlandı.' : 'Ban kaldırıldı.');
+  };
+
+  const toggleLegalHold = async () => {
+    if (!d) return;
+    const willHold = !d.legal_hold;
+    let reason: string | null = null;
+    if (willHold) {
+      reason = (window.prompt('Adli saklama sebebi (zorunlu — mahkeme/savcılık dosya no vb.):') || '').trim();
+      if (!reason) { setMsg('Sebep zorunlu — işlem iptal edildi.'); return; }
+    } else if (!window.confirm('Adli saklamayı KALDIR? Hesap silme-bekleyen durumdaysa verisi (yüz fotoğrafı dahil) KALICI silinir.')) {
+      return;
+    }
+    setBusy(true); setMsg('');
+    const { error } = await supabase.rpc('rpc_set_legal_hold', { p_target_id: d.id, p_on: willHold, p_reason: reason });
+    setBusy(false);
+    if (error) { setMsg('Hata: ' + error.message); return; }
+    setD({ ...d, legal_hold: willHold, legal_hold_reason: willHold ? reason : null, legal_hold_set_at: willHold ? new Date().toISOString() : null });
+    setMsg(willHold ? 'Adli saklama AÇILDI.' : 'Adli saklama kaldırıldı.');
   };
 
   const Row = ({ k, v }: { k: string; v: unknown }) => (
@@ -92,6 +113,7 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                 <p className="font-bold truncate">{d.display_name || '—'}</p>
                 <p className="text-white/40 text-xs truncate">@{d.username || '—'}</p>
                 {d.is_banned && <span className="inline-block mt-1 text-[10px] font-bold text-red-400 border border-red-500/40 rounded px-1.5 py-0.5">BANLI</span>}
+                {d.legal_hold && <span className="inline-block mt-1 ml-1 text-[10px] font-bold text-amber-400 border border-amber-500/40 rounded px-1.5 py-0.5">⚖️ ADLİ SAKLAMA</span>}
               </div>
             </div>
 
@@ -126,6 +148,26 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
               >
                 {busy ? '…' : d.is_banned ? 'Banı Kaldır' : 'Kullanıcıyı Banla'}
               </button>
+            )}
+
+            {d.role !== 'master' && (
+              <button
+                onClick={toggleLegalHold}
+                disabled={busy}
+                className={`w-full mt-2 py-2.5 rounded-lg font-bold text-sm border disabled:opacity-50 ${
+                  d.legal_hold
+                    ? 'border-amber-500/40 bg-amber-500/10 text-amber-400'
+                    : 'border-white/15 bg-white/5 text-white/70'
+                }`}
+              >
+                {busy ? '…' : d.legal_hold ? '⚖️ Adli Saklamayı Kaldır' : '⚖️ Adli Saklamaya Al'}
+              </button>
+            )}
+            {d.legal_hold && d.legal_hold_reason && (
+              <p className="text-amber-300/70 text-[11px] mt-2">
+                Sebep: {d.legal_hold_reason}
+                {d.legal_hold_set_at ? ` · ${new Date(d.legal_hold_set_at).toLocaleDateString('tr-TR')}` : ''}
+              </p>
             )}
           </div>
         )}
