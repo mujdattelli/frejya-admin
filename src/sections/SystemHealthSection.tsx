@@ -50,6 +50,7 @@ export function SystemHealthSection() {
   const [testPushLoading, setTestPushLoading] = useState(false);
   const [branches, setBranches] = useState<any[] | null>(null);
   const [branchErr, setBranchErr] = useState('');
+  const [captcha, setCaptcha] = useState<{ status: 'loading' | 'enforced' | 'disabled' | 'error'; detail?: string }>({ status: 'loading' });
 
   const checkE2ee = async () => {
     const id = e2eeUserId.trim();
@@ -111,6 +112,26 @@ export function SystemHealthSection() {
     })();
     return () => { active = false; };
   }, []);
+
+  const checkCaptcha = async () => {
+    setCaptcha({ status: 'loading' });
+    try {
+      const url = import.meta.env.VITE_SUPABASE_URL as string;
+      const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+      const res = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { apikey: anon, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'healthcheck_nobody@example.com', password: 'x' }),
+      });
+      const j: any = await res.json().catch(() => ({}));
+      if (j?.error_code === 'captcha_failed') setCaptcha({ status: 'enforced', detail: j.msg });
+      else setCaptcha({ status: 'disabled', detail: `error_code=${j?.error_code ?? '—'} · ${j?.msg ?? ''}`.slice(0, 140) });
+    } catch (e: any) {
+      setCaptcha({ status: 'error', detail: e?.message || String(e) });
+    }
+  };
+
+  useEffect(() => { checkCaptcha(); }, []);
 
   const runCron = async (jobname: string) => {
     setRunStatus(s => ({ ...s, [jobname]: { running: true } }));
@@ -178,6 +199,25 @@ export function SystemHealthSection() {
         <Card title="AI 24s · tıkla" value={ai.success} sub={`çökme: ${ai.crash}`} warn={aiWarn} onClick={toggleAiFails} />
         <Card title="Push Token" value={`${ph.valid_expo}/${ph.total_active}`} sub={`token: ${ph.with_token}`} warn={pushWarn} />
         <Card title="Arşiv Mesaj" value={data.archived_msgs} />
+      </div>
+
+      <div className="mb-6">
+        <h3 className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2">Captcha (Bot Savunması)</h3>
+        <div className="bg-card rounded-lg p-3 border" style={{ borderColor: captcha.status === 'disabled' ? '#EF444460' : captcha.status === 'enforced' ? '#10B98140' : '#ffffff14' }}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              {captcha.status === 'loading' && <p className="text-white/50 text-sm">Kontrol ediliyor…</p>}
+              {captcha.status === 'enforced' && <p className="text-emerald-400 text-sm font-bold">✅ Turnstile ZORUNLU — kayıt/giriş server'da captcha ile korunuyor.</p>}
+              {captcha.status === 'disabled' && <p className="text-red-400 text-sm font-bold">❌ CAPTCHA KAPALI — kayıt/giriş botlara açık! Supabase → Authentication → Bot/Captcha'yı AÇ.</p>}
+              {captcha.status === 'error' && <p className="text-amber-300 text-sm">⚠️ Kontrol edilemedi (ağ).</p>}
+              {captcha.detail && <p className="text-white/40 text-[11px] mt-1 font-mono break-all">{captcha.detail}</p>}
+            </div>
+            <button onClick={checkCaptcha} className="px-3 py-1.5 rounded text-[11px] font-bold bg-primary/15 border border-primary/40 hover:bg-primary/25 shrink-0">
+              Tekrar Kontrol
+            </button>
+          </div>
+          <p className="text-white/30 text-[10px] mt-2">Token OLMADAN auth çağrısı yapar; <span className="font-mono">captcha_failed</span> dönerse zorunlu. Kullanıcı yaratmaz, yan etkisiz.</p>
+        </div>
       </div>
 
       {queueWarn && (
