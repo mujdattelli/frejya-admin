@@ -556,10 +556,10 @@ const CHECKLIST = [
       { title: '8.2 Davet', items: [
         { id: '8.2.1', text: '8 haneli benzersiz davet kodu (Profilim → Üyeliğim altındaki kart)' },
         { id: '8.2.2', text: '"Paylaş" → Share API' },
-        { id: '8.2.3', text: 'Davet edilen foto onaylanınca → +1 ay Premium' },
+        { id: '8.2.3', text: 'Davetli onaylanınca davet edene +1 ay Premium (davet eden ONAYSIZSA: onaylayınca aktifleşir)' },
         { id: '8.2.4', text: 'Max 5 ay birikir' },
         { id: '8.2.5', text: 'Aynı device_id → premium VERMEZ' },
-        { id: '8.2.6', text: 'İlk-1000 listesindeki e-posta foto onayında 3 ay Premium + balon' },
+        { id: '8.2.6', text: 'İlk-1000 e-posta foto onayında 3 ay Premium (ONAYSIZSA: onaylayınca aktifleşir) + balon' },
       ]},
       { title: '8.3 Tier Limitleri', items: [
         { id: '8.3.1', text: 'Normal: 7 zil, 100 takip, 50 post, 10 sonuç' },
@@ -570,6 +570,8 @@ const CHECKLIST = [
       { title: '8.4 Onaylı (E-posta Kodu)', items: [
         { id: '8.4.1', text: 'Üyeliğim → doğrulama kodu gelir; gönderim hatasında 60sn cooldown YANMAZ + gerçek hata mesajı' },
         { id: '8.4.2', text: 'Kod doğru → Onaylı rozeti' },
+        { id: '8.4.3', text: 'Onaysız (is_verified=false) hesap PREMIUM OLAMAZ — admin de veremez; bekleyen premium onaylanınca aktifleşir' },
+        { id: '8.4.4', text: 'Onaysıza online+5dk sonra 20 günde bir "onaylı ol" hatırlatması (Sonra / Evet→Üyeliğim)' },
       ]},
     ]},
   { key: '9', title: 'Admin Paneli', emoji: '🟢', importance: 'nice',
