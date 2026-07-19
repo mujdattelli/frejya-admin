@@ -104,6 +104,9 @@
   .platform-check.iphone input[type=checkbox]:checked {
     background: #1A1A1A; border-color: #1A1A1A;
   }
+  .platform-check.ai input[type=checkbox]:checked {
+    background: #B8782F; border-color: #B8782F;
+  }
   .platform-check input[type=checkbox]:checked::after {
     content: '✓'; color: white; font-size: 11px; font-weight: 700;
     position: absolute; top: 50%; left: 50%;
@@ -116,6 +119,9 @@
   }
   .platform-label.iphone { color: #1A1A1A; }
   .platform-label.android { color: #6D28D9; }
+  .platform-label.ai { color: #B8782F; }
+  .item.ai-approved { background: #FBF6EC; }
+  .item.ai-approved .item-id { color: #B8782F; }
   .item-text { flex: 1; font-size: 14px; line-height: 1.4; }
   .item.done-all .item-text { color: #A0998E; text-decoration: line-through; }
   .item.done-one .item-text { color: #7A6D5C; }
@@ -156,12 +162,13 @@
 <div class="wrap">
   <header>
     <h1>Frejya — Test Listesi</h1>
-    <div class="subtitle">özel · <strong style="color:#6D28D9">A</strong>ndroid + <strong style="color:#1A1A1A">i</strong>Phone ayrı tik · her ikisi yeşil sayılır · <span id="sync-badge" style="font-weight: 600;">⏳ Yükleniyor...</span></div>
+    <div class="subtitle">özel · <strong style="color:#B8782F">🤖 AI</strong> (koddan onaylı) + <strong style="color:#6D28D9">A</strong>ndroid + <strong style="color:#1A1A1A">i</strong>Phone · "tamamlandı" = A+i · <span id="sync-badge" style="font-weight: 600;">⏳ Yükleniyor...</span></div>
     <div class="progress-bar">
       <div class="progress-fill" id="pf" style="width: 0%"></div>
     </div>
     <div class="progress-text">
       <span><strong id="done">0</strong> / <span id="total">0</span> tamamlandı</span>
+      <span id="ai-count" style="color:#B8782F; font-weight:600;">🤖 0 AI onaylı</span>
       <span id="percent">%0</span>
     </div>
     <div class="toolbar">
@@ -725,16 +732,16 @@ function updateSyncBadge() {
 
 function getItemState(id) {
   const v = state[id];
-  if (!v) return { android: false, iphone: false };
+  if (!v) return { android: false, iphone: false, ai: false };
   // Eski format true ise (migrate edilmemiş edge)
-  if (v === true) return { android: true, iphone: true };
-  return { android: !!v.android, iphone: !!v.iphone };
+  if (v === true) return { android: true, iphone: true, ai: false };
+  return { android: !!v.android, iphone: !!v.iphone, ai: !!v.ai };
 }
 
 function setItemState(id, platform, checked) {
   const cur = getItemState(id);
   cur[platform] = checked;
-  if (!cur.android && !cur.iphone) {
+  if (!cur.android && !cur.iphone && !cur.ai) {
     delete state[id];
   } else {
     state[id] = cur;
@@ -797,10 +804,14 @@ function renderItem(it) {
   const bothDone = s.android && s.iphone;
   if (onlyUnchecked && bothDone) return '';
   const oneDone = !bothDone && (s.android || s.iphone);
-  const cls = bothDone ? 'done-all' : (oneDone ? 'done-one' : '');
+  const cls = (bothDone ? 'done-all' : (oneDone ? 'done-one' : '')) + (s.ai ? ' ai-approved' : '');
   return `
-    <div class="item${cls ? ' ' + cls : ''}" data-id="${it.id}">
+    <div class="item${cls ? ' ' + cls.trim() : ''}" data-id="${it.id}">
       <div class="platform-boxes">
+        <label class="platform-check ai">
+          <input type="checkbox" data-id="${it.id}" data-platform="ai" ${s.ai ? 'checked' : ''}>
+          <span class="platform-label ai">🤖 AI</span>
+        </label>
         <label class="platform-check android">
           <input type="checkbox" data-id="${it.id}" data-platform="android" ${s.android ? 'checked' : ''}>
           <span class="platform-label android">A</span>
@@ -858,12 +869,23 @@ function renderAll() {
   document.getElementById('sections').innerHTML = CHECKLIST.map(renderSection).join('');
 }
 
+function countAI() {
+  let ai = 0;
+  CHECKLIST.forEach(s => {
+    s.subsections.forEach(sub => sub.items.forEach(it => { if (getItemState(it.id).ai) ai++; }));
+    if (s.bugCheck) s.bugCheck.forEach(it => { if (getItemState(it.id).ai) ai++; });
+  });
+  return ai;
+}
+
 function updateProgress() {
   const { total, done } = countAll();
   document.getElementById('done').textContent = done;
   document.getElementById('total').textContent = total;
   document.getElementById('pf').style.width = ((done / total) * 100) + '%';
   document.getElementById('percent').textContent = '%' + Math.round((done / total) * 100);
+  const aiEl = document.getElementById('ai-count');
+  if (aiEl) aiEl.textContent = '🤖 ' + countAI() + ' AI onaylı';
 }
 
 // ─── Events ───
@@ -874,13 +896,14 @@ document.addEventListener('change', (e) => {
     if (!platform) return;
     setItemState(id, platform, e.target.checked);
 
-    // Item görsel güncelleme (full done / one done)
+    // Item görsel güncelleme (full done / one done / ai)
     const itemEl = e.target.closest('.item');
     if (itemEl) {
       const s = getItemState(id);
-      itemEl.classList.remove('done-all', 'done-one');
+      itemEl.classList.remove('done-all', 'done-one', 'ai-approved');
       if (s.android && s.iphone) itemEl.classList.add('done-all');
       else if (s.android || s.iphone) itemEl.classList.add('done-one');
+      if (s.ai) itemEl.classList.add('ai-approved');
     }
 
     // Section count update
