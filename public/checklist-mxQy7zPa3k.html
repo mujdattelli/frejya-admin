@@ -202,7 +202,7 @@ const CHECKLIST = [
         { id: '1.1.4', text: '"Hesap oluştur" → SignUp ekranı açılır' },
       ]},
       { title: '1.2 Kayıt (SignUp)', items: [
-        { id: '1.2.1', text: 'E-posta, şifre, doğum yılı, cinsiyet, takma ad, avatar, boy/kilo sırayla' },
+        { id: '1.2.1', text: 'Adım 1: cinsiyet, foto, avatar, ses → Adım 2: e-posta, şifre, takma ad, doğum yılı, boy/kilo' },
         { id: '1.2.2', text: 'Kadın seçince kadın ses tonu (erkek karışmıyor)' },
         { id: '1.2.3', text: '18 yaş altı reddedilir' },
         { id: '1.2.4', text: '60 yaş üstü reddedilir' },
@@ -277,7 +277,7 @@ const CHECKLIST = [
         { id: '2.1.4', text: 'Hobiler chip' },
         { id: '2.1.5', text: 'Bio paragraf' },
         { id: '2.1.6', text: 'Sesli tanıtım butonu' },
-        { id: '2.1.7', text: 'Gönderilerim grid' },
+        { id: '2.1.7', text: 'Gönderilerim listesi (dikey)' },
         { id: '2.1.8', text: '"Profili Düzenle" butonu' },
         { id: '2.1.9', text: 'Mahlas tier rengi' },
         { id: '2.1.10', text: 'Onaylı mavi tik + Premium taç (ikisi varsa iki rozet)' },
@@ -363,7 +363,7 @@ const CHECKLIST = [
       { title: '3.3 Etkileşim', items: [
         { id: '3.3.1', text: 'Beğeni/yorum → Aura kırmızı rozet (push/balon YOK)' },
         { id: '3.3.2', text: 'Aura aç → rozet sıfırlanır' },
-        { id: '3.3.3', text: 'Yorum-beğenisi günlük 50 limit (51. bloklanır)' },
+        { id: '3.3.3', text: 'Günlük limitler: beğeni 40 / yorum 20 / yorum-beğenisi 50 — aşan bloklanır' },
         { id: '3.3.4', text: 'Yoruma yanıt → rozet YORUM SAHİBİNE ("yorumuna yanıt verdi")' },
         { id: '3.3.5', text: 'Başkasının beğeni/yorumu realtime düşer; kendi yorumun anında görünür (kaybolmaz)' },
       ]},
@@ -381,7 +381,7 @@ const CHECKLIST = [
   { key: '4', title: 'Detaylı Arama', emoji: '🟡', importance: 'important',
     subsections: [
       { title: '4.1 Form', items: [
-        { id: '4.1.1', text: 'Yaş/boy/eğitim/meslek/sigara/alkol/evcil/din chip' },
+        { id: '4.1.1', text: 'Yaş/boy/eğitim/meslek chip (sigara/alkol/evcil/din formda YOK — puanlamada)' },
         { id: '4.1.2', text: '"Bana Uygun" formu doldurur' },
         { id: '4.1.3', text: 'Arama yap → sonuç sayfası' },
         { id: '4.1.4', text: '"Form Temizle" tüm filtreleri sıfırlar' },
@@ -401,7 +401,6 @@ const CHECKLIST = [
     bugCheck: [
       { id: '4.X.1', text: 'Profilden geri formuna düşüyorsa' },
       { id: '4.X.2', text: 'Tier limit yanlış' },
-      { id: '4.X.3', text: 'Mesajlaşmadakiler aramada' },
     ]},
   { key: '5', title: 'Zil & Kapı', emoji: '🔴', importance: 'critical',
     subsections: [
@@ -522,8 +521,8 @@ const CHECKLIST = [
         { id: '7.1.7', text: 'Aynı bildirim iki kez balon olmaz' },
       ]},
       { title: '7.2 İzleme', items: [
-        { id: '7.2.1', text: 'Takip ettiğim mesajlaşmasını bitirdi → balon' },
-        { id: '7.2.2', text: 'Balona tık → İZLEME sekmesi' },
+        { id: '7.2.1', text: 'Takip ettiğim müsait oldu → İZLEME rozeti (+arka planda push); balon YOK' },
+        { id: '7.2.2', text: 'Push bildirimine tık → İZLEME sekmesi' },
         { id: '7.2.3', text: 'İZLEME rozeti var' },
       ]},
       { title: '7.3 Aura', items: [
@@ -593,7 +592,7 @@ const CHECKLIST = [
         { id: '10.1.2', text: 'Yeni mesaj → "İnternet yok"' },
         { id: '10.1.3', text: 'Net gelince → OK' },
         { id: '10.1.4', text: '3G/yavaş → profil <1sn' },
-        { id: '10.1.5', text: 'RPC 10sn+ → timeout' },
+        { id: '10.1.5', text: 'RPC 15sn+ → timeout (storage 60sn, fonksiyon 30sn)' },
         { id: '10.1.6', text: 'Bağlantı kopup gelince rozet/mesajlar kendiliğinden toparlar' },
       ]},
       { title: '10.2 Multi-Device', items: [
