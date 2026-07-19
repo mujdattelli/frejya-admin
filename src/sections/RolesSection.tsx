@@ -50,7 +50,7 @@ export function RolesSection() {
 
   const ROLE_DESC: Record<string, string> = {
     user: 'Normal kullanıcı — yönetim paneli erişimi yok.',
-    moderator: 'Yalnız moderasyon sekmeleri (foto onayı, şikayet, ban, istekler).',
+    moderator: 'Yalnız foto onayı + ban. Şikayet/istek/giriş-sorunları master yetkisindedir.',
     reviewer: 'Test/inceleme hesabı — AI foto onayını bypass eder (App Store review).',
     master: 'Tüm yönetim paneline + hassas işlemlere (premium/rol/API key) erişir.',
   };
