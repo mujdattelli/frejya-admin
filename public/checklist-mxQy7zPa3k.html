@@ -425,7 +425,7 @@ const CHECKLIST = [
         { id: '5.1.7', text: 'Hedef mesajlaşmada bile zil çalabilirim' },
         { id: '5.1.8', text: 'Engel (ben→o veya o→ben) varsa çalamam' },
         { id: '5.1.9', text: 'Aynı kişiye ZATEN pending zilim varsa profilde zil ikonu PASİF (disabled, soluk) → modal açılmaz; zil atınca anında pasifleşir (has_pending_ring)' },
-        { id: '5.1.10', text: 'Takipten çıkınca o kişiye gönderdiğim pending zil DÜŞER — Zil sekmesinden + hedefin Kapı\'sından kalkar (kural: zil için takip şart; sunucu rpc_unfollow_user siler). doorbell_ring_log cooldown korunur.' },
+        { id: '5.1.10', text: 'Takipten çıkınca o kişiye gönderdiğim pending zil DÜŞER — Zil sekmesinden + hedefin Kapı\'sından kalkar (kural: zil için takip şart; sunucu rpc_unfollow_user siler). doorbell_ring_log cooldown korunur. TEKRAR takip edince zil ikonu AKTİF olur (hasPendingRing state+cache resetlenir), zil denemesinde 5dk cooldown "çok kısa süre önce" der.' },
       ]},
       { title: '5.2 KAPI Sekmesi', items: [
         { id: '5.2.1', text: 'Bana zil → KAPI listede' },
