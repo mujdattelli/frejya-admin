@@ -569,7 +569,7 @@ const CHECKLIST = [
         { id: '8.3.4', text: 'Limit aşımı → net hata' },
       ]},
       { title: '8.4 Onaylı (E-posta Kodu)', items: [
-        { id: '8.4.1', text: 'Üyeliğim → doğrulama kodu gelir; gönderim hatasında 60sn cooldown YANMAZ + gerçek hata mesajı' },
+        { id: '8.4.1', text: 'Üyeliğim → "Kod Gönder" → kod-giriş alanı ANINDA belirir (edge Resend\'i beklemez, arka planda gönderir; "kod gönderildi" alert\'i YOK — kaldırıldı); e-posta gelir; 60sn cooldown, gönderim başarısızsa cooldown geri çekilir (hemen resend)' },
         { id: '8.4.2', text: 'Kod doğru → Onaylı rozeti' },
         { id: '8.4.3', text: 'Onaysız (is_verified=false) hesap PREMIUM OLAMAZ — admin de veremez; bekleyen premium onaylanınca aktifleşir' },
         { id: '8.4.4', text: 'Onaysıza online+5dk sonra 20 günde bir "onaylı ol" hatırlatması (Sonra / Evet→Üyeliğim)' },
