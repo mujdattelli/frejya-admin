@@ -570,7 +570,8 @@ const CHECKLIST = [
       ]},
       { title: '8.4 Onaylı (E-posta Kodu)', items: [
         { id: '8.4.1', text: 'Üyeliğim → "Kod Gönder" → kod-giriş alanı ANINDA belirir (edge Resend\'i beklemez, arka planda gönderir; "kod gönderildi" alert\'i YOK — kaldırıldı); e-posta gelir; 60sn cooldown, gönderim başarısızsa cooldown geri çekilir (hemen resend)' },
-        { id: '8.4.2', text: 'Kod doğru → Onaylı rozeti' },
+        { id: '8.4.2', text: 'Kod doğru → Onaylı rozeti (başarı: blocking alert DEĞİL, non-blocking Toast; Kod Gönder/Doğrula sırasında butonda spinner)' },
+        { id: '8.4.6', text: 'Bildirim listesinde "Davetin ödüllendirildi / Premium" satırına tıkla → Profilim > Üyeliğim (e-posta onay) açılır — HEM standalone HEM profil bildirim sekmesinde' },
         { id: '8.4.3', text: 'Onaysız (is_verified=false) hesap PREMIUM OLAMAZ — admin de veremez; bekleyen premium onaylanınca aktifleşir' },
         { id: '8.4.4', text: 'Onaysıza online+5dk sonra 20 günde bir "onaylı ol" hatırlatması (Sonra / Evet→Üyeliğim)' },
         { id: '8.4.5', text: 'Onaysız + bekleyen premium (pending>0) varsa: online olur olmaz (~4 sn, 5dk gecikme YOK) HER 5 GÜNDE BİR, 30 gün boyunca "Premium Hediyen Var (X ay) — onayla" uyarısı (Sonra / Onayla ve Al→Üyeliğim); 30 gün dolunca 20-günlük genel uyarıya döner (o hâlâ 5dk)' },
