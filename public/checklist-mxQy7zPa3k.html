@@ -362,6 +362,7 @@ const CHECKLIST = [
         { id: '3.1.4', text: 'Reviewer hiçbir akışta görünmüyor' },
         { id: '3.1.5', text: 'Banlı/silinmiş görünmüyor' },
         { id: '3.1.6', text: 'Engellediğim görünmüyor' },
+        { id: '3.1.7', text: 'Gönderi sahibi adı tier RENGİNDE — hem başlıkta HEM gönderi metin satırının başında (premium mor #6D28D9 / onaylı koyu #1A1A1A / normal açık #8A7E6A). Rozet YOK (renk yeter).' },
       ]},
       { title: '3.2 Paylaşım', items: [
         { id: '3.2.1', text: '"+" → CreatePostModal' },
@@ -375,6 +376,7 @@ const CHECKLIST = [
         { id: '3.3.3', text: 'Günlük limitler: beğeni 40 / yorum 20 / yorum-beğenisi 50 — aşan bloklanır' },
         { id: '3.3.4', text: 'Yoruma yanıt → rozet YORUM SAHİBİNE ("yorumuna yanıt verdi")' },
         { id: '3.3.5', text: 'Başkasının beğeni/yorumu realtime düşer; kendi yorumun anında görünür (kaybolmaz)' },
+        { id: '3.3.6', text: 'Etkileşimler sekmesinde etkileşen kişinin adı tier RENGİNDE (eski sabit-altın DEĞİL) — get_my_interactions_feed sender tier alanları döndürür' },
       ]},
       { title: '3.4 Post Yığını (FIFO)', items: [
         { id: '3.4.1', text: 'Normal 51. → en eski silinir (max 50)' },
@@ -423,6 +425,7 @@ const CHECKLIST = [
         { id: '5.1.7', text: 'Hedef mesajlaşmada bile zil çalabilirim' },
         { id: '5.1.8', text: 'Engel (ben→o veya o→ben) varsa çalamam' },
         { id: '5.1.9', text: 'Aynı kişiye ZATEN pending zilim varsa profilde zil ikonu PASİF (disabled, soluk) → modal açılmaz; zil atınca anında pasifleşir (has_pending_ring)' },
+        { id: '5.1.10', text: 'Takipten çıkınca o kişiye gönderdiğim pending zil DÜŞER — Zil sekmesinden + hedefin Kapı\'sından kalkar (kural: zil için takip şart; sunucu rpc_unfollow_user siler). doorbell_ring_log cooldown korunur.' },
       ]},
       { title: '5.2 KAPI Sekmesi', items: [
         { id: '5.2.1', text: 'Bana zil → KAPI listede' },
