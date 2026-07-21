@@ -295,7 +295,7 @@ const CHECKLIST = [
       { title: '2.2 Başkasının Profili', items: [
         { id: '2.2.1', text: 'Hayvan avatar (gerçek foto YOK)' },
         { id: '2.2.2', text: 'Demografi/hobiler/bio' },
-        { id: '2.2.3', text: '"Takip Et"/"Takipten Çık" doğru (TAKİP ET = altın gradient buton; Android APK\'de boş beyaz kutu DEĞİL)' },
+        { id: '2.2.3', text: '"Takip Et"/"Takipten Çık" doğru (TAKİP ET = altın buton SOLID bg #B4854A; Android APK\'de boş beyaz kutu DEĞİL — gradient değil solid, elevation+overflow şeffaf-view artefaktı çözüldü)' },
         { id: '2.2.4', text: '"Zil Çal" butonu (şartlara göre)' },
         { id: '2.2.5', text: 'Takipçi/Takip sayıları' },
         { id: '2.2.6', text: 'Sayıya tık → liste açılmıyor (sadece kendisi)' },
@@ -422,6 +422,7 @@ const CHECKLIST = [
         { id: '5.1.6', text: 'Günlük zil hakkı dolmamış (7/10/20)' },
         { id: '5.1.7', text: 'Hedef mesajlaşmada bile zil çalabilirim' },
         { id: '5.1.8', text: 'Engel (ben→o veya o→ben) varsa çalamam' },
+        { id: '5.1.9', text: 'Aynı kişiye ZATEN pending zilim varsa profilde zil ikonu PASİF (disabled, soluk) → modal açılmaz; zil atınca anında pasifleşir (has_pending_ring)' },
       ]},
       { title: '5.2 KAPI Sekmesi', items: [
         { id: '5.2.1', text: 'Bana zil → KAPI listede' },
