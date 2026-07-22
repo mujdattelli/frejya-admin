@@ -207,7 +207,7 @@ const CHECKLIST = [
         { id: '1.1.2', text: 'Login ekranı responsive (notch/home-indicator değmiyor)' },
         { id: '1.1.3', text: 'E-posta tıklayınca klavye açılır, form klavye üstüne kayar' },
         { id: '1.1.4', text: '"Hesap oluştur" → SignUp ekranı açılır' },
-        { id: '1.1.5', text: 'Giriş + Kayıt ekranlarında arka planda keskin kenarlı açık dikdörtgen/bant ("görüntü pisliği") YOK — altın ışıltı yumuşak akar (LiquidGoldBackground shimmer katmanlarında View opacity YOK, alfa gradient rengine gömülü; Android offscreen-katman kenarı oluşmaz)' },
+        { id: '1.1.5', text: 'Google ile giriş → "Giriş yapılıyor" perdesi düz koyu; arkada keskin kenarlı açık dikey bant ("görüntü pisliği") YOK. Kök sebep: perde ağaç-içi absolute View + elevation:30 idi; native <Modal transparent> içine alındı (animationType="none", eski anında-belirme davranışı korundu).' },
       ]},
       { title: '1.2 Kayıt (SignUp)', items: [
         { id: '1.2.1', text: 'Adım 1: cinsiyet, foto, avatar, ses → Adım 2: e-posta, şifre, takma ad, doğum yılı, boy/kilo' },
@@ -311,7 +311,9 @@ const CHECKLIST = [
         { id: '2.3.6', text: 'Duplicate yok' },
         { id: '2.3.7', text: 'Satıra tık → o profil' },
         { id: '2.3.8', text: '30+ takipçi sayfalı yükleme' },
-        { id: '2.3.9', text: 'Modal açıkken arkada isim/foto üstünde kare gibi açık "opacity" lekesi YOK (Android) — Profilim/Bildirimler sekme dock\'unda overflow-hidden+elevation birlikte kullanılmıyor, pill elevation\'sız' },
+        { id: '2.3.9', text: 'Liste açıkken arkada (dock ile foto arasından aşağı inen) açık dikey bant YOK — Android. Kök sebep: perde ağaç-içi absoluteFill View + elevation:50 idi; native <Modal transparent> içine alındı. Aura/sohbet/kazıma perdeleri zaten Modal olduğu için onlarda hiç görülmemişti.' },
+        { id: '2.3.10', text: 'Liste açıkken Android GERİ tuşu → yalnız listeyi kapatır (profil açık kalır, uygulamadan çıkmaz) — Modal onRequestClose' },
+        { id: '2.3.11', text: 'Profil > Destek formu açıkken arkada açık dikey bant YOK (Android) — perde native <Modal transparent> içinde, ağaç-içi elevation:100 kaldırıldı; klavye davranışı (KeyboardAvoidingView) korundu' },
       ]},
       { title: '2.4 Profili Düzenle', items: [
         { id: '2.4.1', text: 'Boy/kilo/hobi/bio/meslek değişir (mahlas SABİT — değiştirilemez)' },
@@ -429,6 +431,7 @@ const CHECKLIST = [
         { id: '5.1.7', text: 'Hedef mesajlaşmada bile zil çalabilirim' },
         { id: '5.1.8', text: 'Engel (ben→o veya o→ben) varsa çalamam' },
         { id: '5.1.9', text: 'Aynı kişiye ZATEN pending zilim varsa profilde zil ikonu PASİF (disabled, soluk) → modal açılmaz; zil atınca anında pasifleşir (has_pending_ring)' },
+        { id: '5.1.11', text: '"Zil Çal" modalı açıkken arkada açık dikey bant YOK (Android) — perde native <Modal transparent> içinde, ağaç-içi elevation:9999 kaldırıldı; geri tuşu modalı kapatır' },
         { id: '5.1.10', text: 'Takipten çıkınca o kişiye gönderdiğim pending zil DÜŞER — Zil sekmesinden + hedefin Kapı\'sından kalkar (kural: zil için takip şart; sunucu rpc_unfollow_user siler). doorbell_ring_log cooldown korunur. TEKRAR takip edince zil ikonu AKTİF olur (hasPendingRing state+cache resetlenir), zil denemesinde 5dk cooldown "çok kısa süre önce" der.' },
       ]},
       { title: '5.2 KAPI Sekmesi', items: [
