@@ -300,6 +300,7 @@ const CHECKLIST = [
         { id: '2.2.4', text: '"Zil Çal" butonu (şartlara göre)' },
         { id: '2.2.5', text: 'Takipçi/Takip sayıları' },
         { id: '2.2.6', text: 'Sayıya tık → liste açılmıyor (sadece kendisi)' },
+        { id: '2.2.7', text: 'AYNI CİNSİYETTEKİ birinin profilinde "Takip Et" ve "Zil Çal" butonları HİÇ görünmez (aksiyon bloğu komple gizli). Sunucu da zorluyor: rpc_follow_user → ok:false/reason:gender, ring_doorbell + rpc_accept_doorbell → RAISE. "Takipten Çık" serbest kalır (kilitlenme olmasın). Yorum/beğeni bu yasağın DIŞINDA.' },
       ]},
       { title: '2.3 Takipçi/Takip Modal', items: [
         { id: '2.3.1', text: 'Modal anında açılır' },
@@ -379,6 +380,7 @@ const CHECKLIST = [
         { id: '3.3.4', text: 'Yoruma yanıt → rozet YORUM SAHİBİNE ("yorumuna yanıt verdi")' },
         { id: '3.3.5', text: 'Başkasının beğeni/yorumu realtime düşer; kendi yorumun anında görünür (kaybolmaz)' },
         { id: '3.3.6', text: 'Etkileşimler sekmesinde etkileşen kişinin adı tier RENGİNDE (eski sabit-altın DEĞİL) — get_my_interactions_feed sender tier alanları döndürür' },
+        { id: '3.3.7', text: 'Aura yorumlarında AYNI CİNSTEN yorumcu görünebilir (gönderi sahibi karşı cins, yorumcular filtresiz) — adına tıkla → profili açılır ama "Takip Et"/"Zil Çal" YOK. Yorum yazma/beğenme aynı cinste de SERBEST (kasıtlı).' },
       ]},
       { title: '3.4 Post Yığını (FIFO)', items: [
         { id: '3.4.1', text: 'Normal 51. → en eski silinir (max 50)' },
