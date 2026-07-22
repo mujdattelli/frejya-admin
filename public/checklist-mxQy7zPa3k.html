@@ -327,6 +327,7 @@ const CHECKLIST = [
         { id: '2.4.9', text: 'Kamera seçilince KAMERA açılır (galeri değil)' },
         { id: '2.4.10', text: 'Kurtarma anahtarı kartı burada YOK (Ayarlar\'a taşındı)' },
         { id: '2.4.11', text: 'Foto değiştirmede 5dk cooldown\'da picker AÇILMAZ; dk/sn uyarısı ("şu kadar süre değiştiremezsiniz") hemen çıkar' },
+        { id: '2.4.12', text: 'SUNUCU KORUMASI: kullanıcı kendi satırında doğrulama (is_email/phone_verified), günlük sayaçlar, mahlas (username), müsaitlik (last_heartbeat), tek-sohbet (is_chatting), yasal saklama, davet ödülü/kodu, cihaz kimliği, parola hash gibi alanları PATCH ile değiştiremez → RAISE. Meşru alanlar (bio, boy/kilo, hobi, push_token) serbest kalır; edge fn (service_role) ve admin RPC (DEFINER) muaf. guard_private_users_update 40 kolon / guard_public_profiles_update 14 kolon' },
       ]},
       { title: '2.5 Ayarlar', items: [
         { id: '2.5.1', text: 'Ayarlar kapatılınca ekran donmaz; "Profili Düzenle" hemen çalışır' },
@@ -382,7 +383,7 @@ const CHECKLIST = [
         { id: '3.3.4', text: 'Yoruma yanıt → rozet YORUM SAHİBİNE ("yorumuna yanıt verdi")' },
         { id: '3.3.5', text: 'Başkasının beğeni/yorumu realtime düşer; kendi yorumun anında görünür (kaybolmaz)' },
         { id: '3.3.6', text: 'Etkileşimler sekmesinde etkileşen kişinin adı tier RENGİNDE (eski sabit-altın DEĞİL) — get_my_interactions_feed sender tier alanları döndürür' },
-        { id: '3.3.7', text: 'Aura yorumlarında AYNI CİNSTEN yorumcu görünebilir (gönderi sahibi karşı cins, yorumcular filtresiz) — adına tıkla → profili açılır ama "Takip Et"/"Zil Çal" YOK. Yorum yazma/beğenme aynı cinste de SERBEST (kasıtlı).' },
+        { id: '3.3.7', text: 'Aura\'da GÖNDERİLER yalnız karşı cinsten gelir; ancak bir gönderinin YORUMLARI her cinsten görünür (hetero filtre gönderi sahibine uygulanır, yorumculara uygulanmaz — kasıtlı). Dolayısıyla yorumlarda kendi cinsinden biri çıkabilir: adına tıkla → profili açılır ama "Takip Et"/"Zil Çal" YOK. Yorum yazma/beğenme aynı cinste de SERBEST.' },
       ]},
       { title: '3.4 Post Yığını (FIFO)', items: [
         { id: '3.4.1', text: 'Normal 51. → en eski silinir (max 50)' },
