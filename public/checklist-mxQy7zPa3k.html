@@ -129,6 +129,12 @@
     font-family: ui-monospace, monospace; font-size: 11px;
     color: #C0A080; margin-right: 6px; font-weight: 600;
   }
+  .kanit {
+    display: inline-block; margin-left: 8px; padding: 1px 8px;
+    font-family: ui-monospace, monospace; font-size: 10px; font-weight: 700;
+    color: #5C4A2E; background: #FCF7ED; border: 1px solid #DFCEAA;
+    border-radius: 999px; white-space: nowrap; vertical-align: middle;
+  }
   .bug-section { margin-top: 12px; padding: 10px 12px;
     background: #FEF2F2; border-left: 3px solid #EF4444; border-radius: 8px; }
   .bug-section .sub-title { color: #B91C1C; }
@@ -163,6 +169,7 @@
   <header>
     <h1>Frejya — Test Listesi</h1>
     <div class="subtitle">özel · <strong style="color:#B8782F">🤖 AI</strong> (koddan onaylı) + <strong style="color:#6D28D9">A</strong>ndroid + <strong style="color:#1A1A1A">i</strong>Phone · "tamamlandı" = A+i · <span id="sync-badge" style="font-weight: 600;">⏳ Yükleniyor...</span></div>
+    <div class="subtitle">🛡 rozet = otomatik kanıt bağı (jest testi / e2e-smoke fazı / prod-check INVxx bekçisi — kapı koştukça tazelenir) · rozetsiz madde = kanıt cihaz/manuel testtir (24 Tem 2026)</div>
     <div class="progress-bar">
       <div class="progress-fill" id="pf" style="width: 0%"></div>
     </div>
@@ -428,10 +435,10 @@ const CHECKLIST = [
         { id: '5.1.2', text: 'Mesajlaşmada değilim' },
         { id: '5.1.3', text: 'Bugün ona <10 zil (aynı kişi günlük 10)' },
         { id: '5.1.4', text: 'Bu ay ona <100 zil (aynı kişi aylık 100)' },
-        { id: '5.1.5', text: 'Son 5dk içinde ona zil yok — ROBUST: doorbell_ring_log (kalıcı log) sayar; geri-alma/sohbet-bitince BİLE 5dk tutar (satır silinse de)' },
+        { id: '5.1.5', text: 'Son 5dk içinde ona zil yok — ROBUST: doorbell_ring_log (kalıcı log) sayar; geri-alma/sohbet-bitince BİLE 5dk tutar (satır silinse de)', kanit: 'e2e F11.3_ring_cooldown' },
         { id: '5.1.6', text: 'Günlük zil hakkı dolmamış (7/10/20)' },
         { id: '5.1.7', text: 'Hedef mesajlaşmada bile zil çalabilirim' },
-        { id: '5.1.8', text: 'Engel (ben→o veya o→ben) varsa çalamam' },
+        { id: '5.1.8', text: 'Engel (ben→o veya o→ben) varsa çalamam', kanit: 'e2e F13.2_manualblock_no_ring' },
         { id: '5.1.9', text: 'Aynı kişiye ZATEN pending zilim varsa profilde zil ikonu PASİF (disabled, soluk) → modal açılmaz; zil atınca anında pasifleşir (has_pending_ring)' },
         { id: '5.1.10', text: 'Takipten çıkınca o kişiye gönderdiğim pending zil DÜŞER — Zil sekmesinden + hedefin Kapı\'sından kalkar (kural: zil için takip şart; sunucu rpc_unfollow_user siler). doorbell_ring_log cooldown korunur. TEKRAR takip edince zil ikonu AKTİF olur (hasPendingRing state+cache resetlenir), zil denemesinde 5dk cooldown "çok kısa süre önce" der.' },
       ]},
@@ -447,13 +454,13 @@ const CHECKLIST = [
         { id: '5.3.1', text: '1 zil → "{Mahlas} kapını çaldı"' },
         { id: '5.3.2', text: '2 zil → 2 AYRI balon, sırayla (her biri "{isim} kapını çaldı") — birleşme YOK' },
         { id: '5.3.3', text: '5 zil → 5 AYRI balon, sırayla (tek "5 kişi" balonu DEĞİL)' },
-        { id: '5.3.4', text: 'Balona tık → KAPI sekmesi' },
+        { id: '5.3.4', text: 'Balona tık → KAPI sekmesi', kanit: 'jest pushRouting (balon doorbell→KAPI)' },
         { id: '5.3.5', text: 'Mesajlaşmadayken balon çıkmaz' },
       ]},
       { title: '5.4 Push (Background)', items: [
-        { id: '5.4.1', text: 'Arka planda zil → bildirim merkezi push' },
+        { id: '5.4.1', text: 'Arka planda zil → bildirim merkezi push', kanit: 'prod-check INV01/INV02 (sunucu); teslim=cihaz' },
         { id: '5.4.2', text: '"🔔 Kapın çalınıyor — {Mahlas}"' },
-        { id: '5.4.3', text: 'Tıkla → uygulama + KAPI deep-link' },
+        { id: '5.4.3', text: 'Tıkla → uygulama + KAPI deep-link', kanit: 'jest pushRouting (doorbell→KAPI)' },
         { id: '5.4.4', text: 'Zil KABUL edilince zili çalana "Kapınız açıldı" push (tıkla → ODA)' },
       ]},
     ],
@@ -494,26 +501,26 @@ const CHECKLIST = [
       ]},
       { title: '6.4 Kazıma', items: [
         { id: '6.4.1', text: 'Üstte token rozet' },
-        { id: '6.4.2', text: '20+20 kelime (karşılıklı) → 1 kazıma hakkı' },
+        { id: '6.4.2', text: '20+20 kelime (karşılıklı) → 1 kazıma hakkı', kanit: 'e2e F8.1_word_to_scratch' },
         { id: '6.4.3', text: 'Eşik üstü kelime devreder (30 yazan → 10 devir); tek mesajdan max 2 hak' },
         { id: '6.4.4', text: '~5 kullanılan hakta foto TAMAMEN açılır (toplam tavan 9 hak)' },
         { id: '6.4.5', text: 'Parmakla yavaş yavaş açılır' },
-        { id: '6.4.6', text: 'Toplam 9 hakka ulaşınca yeni hak kazanımı durur' },
+        { id: '6.4.6', text: 'Toplam 9 hakka ulaşınca yeni hak kazanımı durur', kanit: 'e2e F8.3_reveal_budget_cap' },
         { id: '6.4.7', text: 'Kazıma açıkken arka planda gerçek foto' },
         { id: '6.4.8', text: 'Foto değişince arka plan güncellenir' },
       ]},
       { title: '6.5 Sesli Mesaj', items: [
-        { id: '6.5.1', text: 'Mic İKİ TARAFTA DA 9 hak kullanılmadan kilitli (foto ~5 hakta açılsa bile)' },
-        { id: '6.5.2', text: 'İki taraf da 9 hak kullanınca mic aktif' },
+        { id: '6.5.1', text: 'Mic İKİ TARAFTA DA 9 hak kullanılmadan kilitli (foto ~5 hakta açılsa bile)', kanit: 'e2e F12.1_voice_locked (sunucu)' },
+        { id: '6.5.2', text: 'İki taraf da 9 hak kullanınca mic aktif', kanit: 'e2e F12.3_voice_unlocked (sunucu)' },
         { id: '6.5.3', text: '60 saniye kayıt limiti' },
         { id: '6.5.4', text: '15 gün sonra otomatik silinir' },
         { id: '6.5.5', text: 'Süresi dolan → "süresi doldu"' },
         { id: '6.5.6', text: 'Kayıt sürerken X/geri → mikrofon hemen kapanır' },
       ]},
       { title: '6.6 OS Push (yeni mesaj)', items: [
-        { id: '6.6.1', text: 'Arka planda → bildirim merkezi' },
+        { id: '6.6.1', text: 'Arka planda → bildirim merkezi', kanit: 'prod-check INV01/INV02 (sunucu); teslim=cihaz' },
         { id: '6.6.2', text: '"Yeni Mesaj — {mahlas}" (içerik GİZLİ)' },
-        { id: '6.6.3', text: 'Tıkla → ChatScreen deep-link' },
+        { id: '6.6.3', text: 'Tıkla → ChatScreen deep-link', kanit: 'jest pushRouting (new_message→sohbet)' },
         { id: '6.6.4', text: 'Ön plandaysa OS bildirimi yok' },
       ]},
       { title: '6.7 Bitir', items: [
@@ -535,16 +542,16 @@ const CHECKLIST = [
     subsections: [
       { title: '7.1 Kritik Sistem', items: [
         { id: '7.1.1', text: 'Foto onaylandı → siyah balon (mesajlaşmada bile)' },
-        { id: '7.1.2', text: 'Foto balon tık → profilim (liste DEĞİL)' },
+        { id: '7.1.2', text: 'Foto balon tık → profilim (liste DEĞİL)', kanit: 'jest pushRouting (balon profile→profil)' },
         { id: '7.1.3', text: 'Foto reddedildi → kırmızı balon → profilim' },
-        { id: '7.1.4', text: 'Şikayet sonucu → balon → Profilim "Uygulama Bildirimleri" sekmesi (koyu standalone DEĞİL — 24 Tem); listede karta tıkla → detay popup (başlık+metin)' },
-        { id: '7.1.5', text: 'Topluluk uyarısı → balon → Profilim "Uygulama Bildirimleri" sekmesi; listede karta tıkla → detay popup' },
+        { id: '7.1.4', text: 'Şikayet sonucu → balon → Profilim "Uygulama Bildirimleri" sekmesi (koyu standalone DEĞİL — 24 Tem); listede karta tıkla → detay popup (başlık+metin)', kanit: 'jest pushRouting (critical→krem sekme; route\'suz→popup) + maestro 10' },
+        { id: '7.1.5', text: 'Topluluk uyarısı → balon → Profilim "Uygulama Bildirimleri" sekmesi; listede karta tıkla → detay popup', kanit: 'jest pushRouting + maestro 10' },
         { id: '7.1.6', text: 'Hesap kapatma → balon + otomatik logout' },
         { id: '7.1.7', text: 'Aynı bildirim iki kez balon olmaz' },
       ]},
       { title: '7.2 İzleme', items: [
-        { id: '7.2.1', text: 'Takip ettiğim müsait oldu → İZLEME rozeti (+arka planda push); balon YOK' },
-        { id: '7.2.2', text: 'Push bildirimine tık → İZLEME sekmesi' },
+        { id: '7.2.1', text: 'Takip ettiğim müsait oldu → İZLEME rozeti (+arka planda push); balon YOK', kanit: 'prod-check INV01/INV02 + e2e F11.2 (sunucu); teslim=cihaz' },
+        { id: '7.2.2', text: 'Push bildirimine tık → İZLEME sekmesi', kanit: 'jest pushRouting (user_available→İZLEME) + maestro 11' },
         { id: '7.2.3', text: 'İZLEME rozeti var' },
       ]},
       { title: '7.3 Aura', items: [
@@ -552,7 +559,7 @@ const CHECKLIST = [
       ]},
       { title: '7.4 Bildirim Listesi', items: [
         { id: '7.4.1', text: 'İngilizce (EN) bildirimlerde ikonlar ve yönlendirme doğru' },
-        { id: '7.4.2', text: 'Foto-red bildirimine tık → Profili Düzenle açılır' },
+        { id: '7.4.2', text: 'Foto-red bildirimine tık → Profili Düzenle açılır', kanit: 'jest pushRouting (routeForNotif reddedil→edit_profile)' },
       ]},
     ],
     bugCheck: [
@@ -841,7 +848,7 @@ function renderItem(it) {
           <span class="platform-label iphone">i</span>
         </label>
       </div>
-      <span class="item-text"><span class="item-id">${it.id}</span>${it.text}</span>
+      <span class="item-text"><span class="item-id">${it.id}</span>${it.text}${it.kanit ? `<span class="kanit">🛡 ${it.kanit}</span>` : ''}</span>
     </div>
   `;
 }
