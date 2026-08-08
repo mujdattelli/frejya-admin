@@ -92,7 +92,7 @@ export function SystemHealthSection() {
       setLoading(false);
     };
     load();
-    const id = setInterval(load, 10000);
+    const id = setInterval(load, 60000);
     return () => { active = false; clearInterval(id); };
   }, []);
 

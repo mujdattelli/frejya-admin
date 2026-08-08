@@ -48,7 +48,7 @@ export function AuditLogSection() {
     setHasMore(list.length === limit);
   }, [limit]);
 
-  useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
+  useEffect(() => { load(); const id = setInterval(load, 60000); return () => clearInterval(id); }, [load]);
 
   if (loading) return <Loading />;
 

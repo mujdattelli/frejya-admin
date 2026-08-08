@@ -31,7 +31,7 @@ export function BannedSection() {
     setHasMore(list.length === limit);
   }, [limit]);
 
-  useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
+  useEffect(() => { load(); const id = setInterval(load, 60000); return () => clearInterval(id); }, [load]);
 
   const unban = async (u: BannedUser) => {
     if (!window.confirm(`"${u.display_name || u.username || u.id}" kullanıcısının banı kaldırılsın mı?`)) return;

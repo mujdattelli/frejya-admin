@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { RolesSection } from '../sections/RolesSection';
 import { PhotosSection } from '../sections/PhotosSection';
@@ -40,6 +40,7 @@ type SectionKey = (typeof SECTIONS)[number]['key'];
 export function Dashboard({ email, role }: { email: string; role: string }) {
   const sections = SECTIONS.filter((s) => role === 'master' || !('masterOnly' in s && s.masterOnly));
   const [active, setActive] = useState<SectionKey>('overview');
+  const [refreshKey, setRefreshKey] = useState(0);
   const meta = sections.find((s) => s.key === active) ?? sections[0];
 
   useEffect(() => {
@@ -103,13 +104,22 @@ export function Dashboard({ email, role }: { email: string; role: string }) {
           <h2 className="text-xl md:text-2xl font-serif" style={{ color: meta.color }}>
             {meta.label}
           </h2>
-          <button
-            onClick={() => supabase.auth.signOut()}
-            className="hidden md:block shrink-0 border border-white/15 rounded-lg px-4 py-2 text-xs text-white/70 hover:bg-white/5"
-          >
-            Çıkış Yap
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setRefreshKey((k) => k + 1)}
+              className="border border-white/15 rounded-lg px-4 py-2 text-xs text-white/70 hover:bg-white/5"
+            >
+              Yenile
+            </button>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="hidden md:block border border-white/15 rounded-lg px-4 py-2 text-xs text-white/70 hover:bg-white/5"
+            >
+              Çıkış Yap
+            </button>
+          </div>
         </div>
+        <Fragment key={`${active}-${refreshKey}`}>
         {active === 'overview' && (
           <OverviewSection
             onNavigate={(s) => {
@@ -131,6 +141,7 @@ export function Dashboard({ email, role }: { email: string; role: string }) {
         {active === 'settings' && role === 'master' && <SettingsSection />}
         {active === 'api' && role === 'master' && <ApiMonitorSection />}
         {active === 'health' && role === 'master' && <SystemHealthSection />}
+        </Fragment>
       </main>
     </div>
   );

@@ -23,7 +23,7 @@ export function OverviewSection({ onNavigate }: { onNavigate?: (section: string)
     setStats(data as Stats);
   }, []);
 
-  useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
+  useEffect(() => { load(); const id = setInterval(load, 60000); return () => clearInterval(id); }, [load]);
 
   if (loading) return <Loading />;
   if (msg) return <StatusMessage text={msg} />;

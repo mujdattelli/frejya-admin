@@ -62,7 +62,7 @@ export function ReportsSection() {
     }
   }, [limit]);
 
-  useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
+  useEffect(() => { load(); const id = setInterval(load, 60000); return () => clearInterval(id); }, [load]);
 
   const apply = async (r: Report) => {
     if (action !== 'IGNORE' && !note.trim()) { setMsg('Lütfen bir not yazın.'); return; }

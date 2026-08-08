@@ -29,7 +29,7 @@ export function LoginIssuesSection() {
     setItems((data as LoginIssue[]) || []);
   }, []);
 
-  useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
+  useEffect(() => { load(); const id = setInterval(load, 60000); return () => clearInterval(id); }, [load]);
 
   const resolve = async (id: string) => {
     const { error } = await supabase.from('login_issue_reports').update({ status: 'resolved' }).eq('id', id);

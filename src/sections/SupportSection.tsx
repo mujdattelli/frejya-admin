@@ -52,7 +52,7 @@ export function SupportSection() {
     }
   }, [limit]);
 
-  useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
+  useEffect(() => { load(); const id = setInterval(load, 60000); return () => clearInterval(id); }, [load]);
 
   const sendReply = async (ticket: Ticket) => {
     if (!reply.trim()) return;

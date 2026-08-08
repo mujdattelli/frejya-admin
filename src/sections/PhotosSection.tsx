@@ -46,7 +46,7 @@ export function PhotosSection() {
 
   useEffect(() => {
     load();
-    const poll = setInterval(load, 5000);
+    const poll = setInterval(load, 60000);
     return () => { clearInterval(poll); };
   }, []);
 

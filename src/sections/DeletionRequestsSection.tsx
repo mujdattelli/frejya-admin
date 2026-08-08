@@ -26,7 +26,7 @@ export function DeletionRequestsSection() {
     setItems((data as DeletionRequest[]) || []);
   }, []);
 
-  useEffect(() => { load(); const id = setInterval(load, 8000); return () => clearInterval(id); }, [load]);
+  useEffect(() => { load(); const id = setInterval(load, 60000); return () => clearInterval(id); }, [load]);
 
   const resolve = async (it: DeletionRequest, action: 'approve' | 'reject') => {
     if (action === 'approve') {
