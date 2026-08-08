@@ -64,14 +64,6 @@ export function ReportsSection() {
 
   useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
-  useEffect(() => {
-    const ch = supabase
-      .channel('admin-reports-section')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'suspicious_activities' }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [load]);
-
   const apply = async (r: Report) => {
     if (action !== 'IGNORE' && !note.trim()) { setMsg('Lütfen bir not yazın.'); return; }
     setBusy(true); setMsg('');

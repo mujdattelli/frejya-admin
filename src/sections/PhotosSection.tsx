@@ -47,16 +47,7 @@ export function PhotosSection() {
   useEffect(() => {
     load();
     const poll = setInterval(load, 5000);
-    const channel = supabase
-      .channel('admin-photos-section')
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'public_profiles' },
-        () => load())
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'public_profiles' },
-        () => load())
-      .subscribe();
-    return () => { clearInterval(poll); supabase.removeChannel(channel); };
+    return () => { clearInterval(poll); };
   }, []);
 
   const decide = async (p: PendingPhoto, isApproved: boolean) => {

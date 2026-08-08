@@ -30,13 +30,6 @@ export function LoginIssuesSection() {
   }, []);
 
   useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
-  useEffect(() => {
-    const ch = supabase
-      .channel('admin-login-issues')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'login_issue_reports' }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [load]);
 
   const resolve = async (id: string) => {
     const { error } = await supabase.from('login_issue_reports').update({ status: 'resolved' }).eq('id', id);

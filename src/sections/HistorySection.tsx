@@ -49,16 +49,7 @@ export function HistorySection() {
     setHasMore(list.length === limit);
   }, [limit]);
 
-  useEffect(() => {
-    load();
-    const channel = supabase
-      .channel('admin-history-section')
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'public_profiles' },
-        () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [load]);
+  useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
   if (loading) return <Loading />;
   if (msg) return <StatusMessage text={msg} />;

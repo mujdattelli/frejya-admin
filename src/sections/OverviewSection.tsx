@@ -25,15 +25,6 @@ export function OverviewSection({ onNavigate }: { onNavigate?: (section: string)
 
   useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
-  useEffect(() => {
-    const ch = supabase.channel('admin-overview-section');
-    for (const table of ['public_profiles', 'suspicious_activities', 'support_tickets', 'private_users']) {
-      ch.on('postgres_changes', { event: '*', schema: 'public', table }, () => load());
-    }
-    ch.subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [load]);
-
   if (loading) return <Loading />;
   if (msg) return <StatusMessage text={msg} />;
   if (!stats) return null;

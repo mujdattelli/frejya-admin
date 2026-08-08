@@ -54,14 +54,6 @@ export function SupportSection() {
 
   useEffect(() => { load(); const id = setInterval(load, 5000); return () => clearInterval(id); }, [load]);
 
-  useEffect(() => {
-    const ch = supabase
-      .channel('admin-support-section')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [load]);
-
   const sendReply = async (ticket: Ticket) => {
     if (!reply.trim()) return;
     setBusy(true); setMsg('');
