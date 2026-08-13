@@ -12,6 +12,8 @@ type TierUser = {
   isPremium: boolean;
   premiumUntil: number | null;
   isPhoneVerified: boolean;
+  isVerified: boolean;
+  isEmailVerified: boolean;
 };
 
 type Stats = {
@@ -70,6 +72,8 @@ export function TiersSection() {
       isPremium: !!u.is_premium,
       premiumUntil: u.premium_until ?? null,
       isPhoneVerified: !!u.is_phone_verified,
+      isVerified: !!u.is_verified,
+      isEmailVerified: !!u.is_email_verified,
     }));
     if (reset) {
       setUsers(rows);
@@ -174,9 +178,16 @@ export function TiersSection() {
               <p className="font-bold text-sm truncate">{u.email}</p>
               <p className="text-[11px] text-white/55 truncate mt-0.5">{u.displayName}</p>
               <div className="flex gap-2 mt-2 text-[10px]">
-                {u.isPhoneVerified && (
-                  <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                    Onaylı
+                {u.isVerified && (
+                  <span
+                    title={
+                      u.isEmailVerified
+                        ? 'Google/Apple ile giriş — e-posta sağlayıcıda doğrulanmış'
+                        : 'telefon / manuel onay'
+                    }
+                    className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                  >
+                    Onaylı{u.isEmailVerified && !u.isPhoneVerified ? ' (Google/Apple)' : ''}
                   </span>
                 )}
                 {u.isPremium && (!u.premiumUntil || u.premiumUntil > Date.now()) && (

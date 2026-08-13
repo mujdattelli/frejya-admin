@@ -12,6 +12,8 @@ type RoleUser = {
   isPremium: boolean;
   premiumUntil: number | null;
   isPhoneVerified: boolean;
+  isVerified: boolean;
+  isEmailVerified: boolean;
 };
 
 const roleLabel = (role: string) =>
@@ -43,6 +45,8 @@ export function RolesSection() {
       isPremium: !!u.is_premium,
       premiumUntil: u.premium_until ?? null,
       isPhoneVerified: !!u.is_phone_verified,
+      isVerified: !!u.is_verified,
+      isEmailVerified: !!u.is_email_verified,
     }));
     setUsers(rows);
     if (rows.length === 0) setMsg('Sonuç yok.');
@@ -83,8 +87,21 @@ export function RolesSection() {
     });
     setBusy(null);
     if (error) { setMsg('Hata: ' + error.message); return; }
-    setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, isPhoneVerified: makeVerified } : x)));
-    setMsg(`${u.displayName} → ${makeVerified ? 'Onaylı verildi' : 'Onaylı kaldırıldı'}.`);
+    // is_verified = (telefon VEYA e-posta). Onayı kaldırınca e-posta doğrulanmışsa tik DÜŞMEZ.
+    setUsers((prev) =>
+      prev.map((x) =>
+        x.id === u.id
+          ? { ...x, isPhoneVerified: makeVerified, isVerified: makeVerified || x.isEmailVerified }
+          : x
+      )
+    );
+    setMsg(
+      makeVerified
+        ? `${u.displayName} → Onaylı verildi.`
+        : u.isEmailVerified
+          ? `${u.displayName} → telefon onayı kaldırıldı, ancak hesap Google/Apple ile doğrulandığı için MAVİ TİK DURUYOR.`
+          : `${u.displayName} → Onaylı kaldırıldı.`
+    );
   };
 
   const applyPremium = async (u: RoleUser, months: number) => {
@@ -191,11 +208,26 @@ export function RolesSection() {
               </div>
 
               <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-white/5">
-                <p className={`text-[11px] ${u.isPhoneVerified ? 'text-blue-400' : 'text-white/40'}`}>
-                  {u.isPhoneVerified ? 'Onaylı (mavi tik)' : 'Onaylı değil'}
-                </p>
+                <div className="min-w-0">
+                  <p className={`text-[11px] ${u.isVerified ? 'text-blue-400' : 'text-white/40'}`}>
+                    {u.isVerified ? 'Onaylı (mavi tik)' : 'Onaylı değil'}
+                  </p>
+                  <p className="text-[10px] mt-0.5 text-white/35">
+                    {u.isEmailVerified && u.isPhoneVerified
+                      ? 'kaynak: Google/Apple girişi + telefon'
+                      : u.isEmailVerified
+                        ? 'kaynak: Google/Apple ile giriş — kalıcı'
+                        : u.isPhoneVerified
+                          ? 'kaynak: telefon / manuel onay'
+                          : 'doğrulanmış giriş veya telefon yok'}
+                  </p>
+                </div>
                 <div className="flex gap-1.5 shrink-0">
-                  {u.isPhoneVerified ? (
+                  {u.isEmailVerified ? (
+                    <span className="text-[10px] text-white/30 max-w-[130px] text-right leading-tight">
+                      Google/Apple onayı kaldırılamaz
+                    </span>
+                  ) : u.isPhoneVerified ? (
                     <button onClick={() => applyVerified(u, false)} disabled={rowBusy}
                       className="text-[11px] font-bold rounded-md px-2.5 py-1.5 border border-red-500/40 bg-red-500/10 text-red-400 disabled:opacity-50">
                       Onaylıyı Kaldır

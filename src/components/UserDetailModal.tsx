@@ -126,7 +126,17 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
               <Row k="Fotoğraf durumu" v={d.profile_picture_status} />
               <Row k="Uyarı sayısı" v={d.warning_count ?? 0} />
               <Row k="Foto red sayısı" v={d.photo_rejection_count ?? 0} />
-              <Row k="Premium" v={d.is_premium ? 'Evet' : 'Hayır'} />
+              <Row k="Onaylı (mavi tik)" v={d.is_verified ? 'Evet' : 'Hayır'} />
+              <Row
+                k="Premium"
+                v={
+                  d.is_premium && (!d.premium_until || d.premium_until > Date.now())
+                    ? 'Evet' + (d.premium_until ? ' — ' + new Date(d.premium_until).toLocaleDateString('tr-TR') : '')
+                    : d.is_premium
+                      ? 'Hayır (süresi geçmiş)'
+                      : 'Hayır'
+                }
+              />
               <Row k="Global skor" v={d.global_score} />
               <Row k="Takipçi / Takip" v={`${d.follower_count ?? 0} / ${d.following_count ?? 0}`} />
               <Row k="Kayıt" v={d.created_at ? new Date(d.created_at).toLocaleDateString('tr-TR') : null} />
