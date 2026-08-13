@@ -42,7 +42,7 @@ export function SupportSection() {
     if (ids.length > 0) {
       const { data: emails } = await supabase.rpc('rpc_admin_get_user_emails', { p_ids: ids });
       const map: Record<string, Sender> = {};
-      (emails || []).forEach((p: any) => {
+      ((emails || []) as { id: string; email?: string | null; display_name?: string | null }[]).forEach((p) => {
         map[p.id] = {
           email: p.email || '(mail yok)',
           displayName: p.display_name || p.id,

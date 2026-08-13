@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading } from '../components/ui';
 
-type ApiKey = { key: string; status?: string; usage_count?: number; limit?: number; [k: string]: any };
+type ApiKey = {
+  key: string; status?: string; usage_count?: number; limit?: number;
+  dailyUsage?: number; [k: string]: unknown;
+};
 
 const maskKey = (k: string) =>
   !k || k.trim() === '' ? '(boş)' : k.length <= 8 ? k : `${k.slice(0, 5)}…${k.slice(-4)}`;
@@ -18,8 +21,8 @@ export function ApiMonitorSection() {
     const fetchKeys = async () => {
       const { data: keys } = await supabase.from('system_settings').select('*').eq('id', 'api_keys').single();
       if (!active) return;
-      const k = keys as any;
-      const norm = (x: any): ApiKey => (typeof x === 'string' ? { key: x } : x);
+      const k = keys as { free_keys?: unknown; paid_keys?: unknown } | null;
+      const norm = (x: unknown): ApiKey => (typeof x === 'string' ? { key: x } : (x as ApiKey));
       setFreeKeys(Array.isArray(k?.free_keys) ? k.free_keys.map(norm) : []);
       setPaidKeys(Array.isArray(k?.paid_keys) ? k.paid_keys.map(norm) : []);
       setLastUpdate(new Date());

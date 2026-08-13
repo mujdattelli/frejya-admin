@@ -65,7 +65,13 @@ export function TiersSection() {
     });
     setSearching(false);
     if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
-    const rows: TierUser[] = (data || []).map((u: any) => ({
+    type TierRow = {
+      id: string; display_name: string; email?: string | null;
+      is_premium?: boolean | null; premium_until?: number | null;
+      is_phone_verified?: boolean | null; is_verified?: boolean | null;
+      is_email_verified?: boolean | null;
+    };
+    const rows: TierUser[] = ((data || []) as TierRow[]).map((u) => ({
       id: u.id,
       displayName: u.display_name,
       email: u.email || '(mail yok)',

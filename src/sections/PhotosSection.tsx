@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserDetailModal } from '../components/UserDetailModal';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
+import { errMsg } from '../lib/errMsg';
 
 type PendingPhoto = {
   id: string;
@@ -67,12 +68,12 @@ export function PhotosSection() {
           p_target_id: p.id,
           p_details: { evaluator: 'ADMIN', rejection_count: result.rejection_count, locked: result.locked },
         });
-      } catch { }
+      } catch { /* audit kaydı best-effort — foto kararını başarısız saymayız */ }
 
       setPhotos((prev) => prev.filter((x) => x.id !== p.id));
       setMsg(isApproved ? 'Fotoğraf onaylandı.' : 'Fotoğraf reddedildi.');
-    } catch (e: any) {
-      setMsg('İşlem başarısız: ' + (e?.message || ''));
+    } catch (e) {
+      setMsg('İşlem başarısız: ' + errMsg(e));
     }
     setBusy(null);
   };

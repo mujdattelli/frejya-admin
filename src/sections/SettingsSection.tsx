@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, StatusMessage } from '../components/ui';
 
 type ApiKey = { key: string; status?: string; usage_count?: number; limit?: number; [k: string]: unknown };
+
+const normKey = (k: unknown): ApiKey =>
+  typeof k === 'string' ? { key: k, status: 'active', usage_count: 0, limit: 100 } : (k as ApiKey);
 
 export function SettingsSection() {
   const [freeKeys, setFreeKeys] = useState<ApiKey[]>([]);
@@ -18,19 +21,16 @@ export function SettingsSection() {
       return next;
     });
 
-  useEffect(() => { load(); }, []);
-
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     const { data: keys } = await supabase.from('system_settings').select('*').eq('id', 'api_keys').single();
-    const k = keys as any;
+    const k = keys as { free_keys?: unknown; paid_keys?: unknown } | null;
     setFreeKeys(Array.isArray(k?.free_keys) ? k.free_keys.map(normKey) : []);
     setPaidKeys(Array.isArray(k?.paid_keys) ? k.paid_keys.map(normKey) : []);
     setLoading(false);
-  };
+  }, []);
 
-  const normKey = (k: any): ApiKey =>
-    typeof k === 'string' ? { key: k, status: 'active', usage_count: 0, limit: 100 } : k;
+  useEffect(() => { load(); }, [load]);
 
   const saveKeys = async () => {
     setSaving(true); setMsg('');
@@ -40,7 +40,7 @@ export function SettingsSection() {
     });
     setSaving(false);
     if (error) { setMsg('Hata: ' + error.message); return; }
-    const d = data as any;
+    const d = data as { free_keys?: unknown; paid_keys?: unknown } | null;
     if (d) {
       setFreeKeys(Array.isArray(d.free_keys) ? d.free_keys.map(normKey) : []);
       setPaidKeys(Array.isArray(d.paid_keys) ? d.paid_keys.map(normKey) : []);

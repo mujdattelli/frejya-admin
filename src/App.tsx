@@ -55,7 +55,7 @@ export default function App() {
           const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
           setMfaOk(aal?.currentLevel === 'aal2');
         }
-      } catch (e) {
+      } catch {
         setAuthError('Sunucuya ulaşılamadı. İnternet bağlantını kontrol edip tekrar dene.');
       } finally {
         setLoading(false);

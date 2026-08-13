@@ -37,7 +37,7 @@ export function QuotasSection() {
 
   const setVal = (cat: string, tier: keyof TierVals, v: string) => {
     const n = v === '' || v === '-' ? v : parseInt(v, 10);
-    setCfg((prev) => prev ? { ...prev, [cat]: { ...prev[cat], [tier]: (n as any) } } : prev);
+    setCfg((prev) => prev ? { ...prev, [cat]: { ...prev[cat], [tier]: (n as unknown as number) } } : prev);
   };
 
   const save = async () => {
@@ -45,7 +45,7 @@ export function QuotasSection() {
     const fifoDown = TIERS.some((t) => Number(cfg.post_fifo?.[t]) < Number(orig.post_fifo?.[t]));
     if (fifoDown && !window.confirm('Post tavanı (FIFO) DÜŞÜRÜLÜYOR. Bu, limiti aşan kullanıcıların EN ESKİ postlarını bir sonraki post atışında KALICI siler. Devam edilsin mi?')) return;
     for (const c of CATS) for (const t of TIERS) {
-      const v = Number((cfg[c.key] as any)?.[t]);
+      const v = Number(cfg[c.key]?.[t]);
       if (!Number.isFinite(v)) { setMsg(`Geçersiz değer: ${c.label} / ${TIER_LABEL[t]}`); return; }
     }
     setBusy(true); setMsg('');
@@ -81,7 +81,7 @@ export function QuotasSection() {
                   <span className="text-white/40 text-[10px]">{TIER_LABEL[t]}</span>
                   <input
                     type="number"
-                    value={String((cfg[c.key] as any)?.[t] ?? '')}
+                    value={String(cfg[c.key]?.[t] ?? '')}
                     onChange={(e) => setVal(c.key, t, e.target.value)}
                     className="bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-teal-500/50"
                   />

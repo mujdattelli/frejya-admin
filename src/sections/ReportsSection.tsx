@@ -57,7 +57,8 @@ export function ReportsSection() {
       const { data: profs } = await supabase
         .from('public_profiles').select('id, display_name').in('id', ids);
       const map: Record<string, string> = {};
-      (profs || []).forEach((p: any) => { map[p.id] = p.display_name || p.id; });
+      ((profs || []) as { id: string; display_name?: string | null }[])
+        .forEach((p) => { map[p.id] = p.display_name || p.id; });
       setNames(map);
     }
   }, [limit]);
@@ -97,7 +98,7 @@ export function ReportsSection() {
     if (error) { setMsg('Toplu işlem başarısız: ' + error.message); return; }
     setReports((prev) => prev.filter((x) => !selected.has(x.id)));
     setSelected(new Set());
-    setMsg(`${(data as any)?.resolved ?? ids.length} şikayet yok sayıldı.`);
+    setMsg(`${(data as { resolved?: number } | null)?.resolved ?? ids.length} şikayet yok sayıldı.`);
   };
 
   if (loading) return <Loading />;

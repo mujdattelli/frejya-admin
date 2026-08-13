@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { BrandMark } from './ui';
+import { errMsg } from '../lib/errMsg';
 
 type Mode = 'loading' | 'enroll' | 'challenge';
 
@@ -33,8 +34,8 @@ export function AdminMfa({ onDone }: { onDone: () => void }) {
       setQr(enrolled.totp.qr_code);
       setSecret(enrolled.totp.secret);
       setMode('enroll');
-    } catch (e: any) {
-      setErr('Başlatma hatası: ' + (e?.message || e));
+    } catch (e) {
+      setErr('Başlatma hatası: ' + errMsg(e));
     }
   }, []);
 
@@ -51,7 +52,7 @@ export function AdminMfa({ onDone }: { onDone: () => void }) {
       });
       if (vErr) throw vErr;
       onDone();
-    } catch (e: any) {
+    } catch {
       setErr('Doğrulama başarısız — kod yanlış veya süresi dolmuş.');
       setCode('');
     } finally {

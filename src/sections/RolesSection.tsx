@@ -37,7 +37,13 @@ export function RolesSection() {
     const { data, error } = await supabase.rpc('rpc_admin_list_users', { p_query: q });
     setSearching(false);
     if (error) { setMsg('Arama başarısız: ' + error.message); return; }
-    const rows: RoleUser[] = (data || []).map((u: any) => ({
+    type UserRow = {
+      id: string; display_name: string; email?: string | null; role?: string | null;
+      is_premium?: boolean | null; premium_until?: number | null;
+      is_phone_verified?: boolean | null; is_verified?: boolean | null;
+      is_email_verified?: boolean | null;
+    };
+    const rows: RoleUser[] = ((data || []) as UserRow[]).map((u) => ({
       id: u.id,
       displayName: u.display_name,
       email: u.email || '',

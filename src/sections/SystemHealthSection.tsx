@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading } from '../components/ui';
+import { errMsg } from '../lib/errMsg';
 
 type Cron = {
   jobname: string;
@@ -22,9 +23,16 @@ type AiFailure = {
   created_at: string;
   user_id: string | null;
   display_name: string | null;
-  details: any;
+  details: unknown;
   level: string | null;
 };
+
+type E2eeResult = {
+  note?: string; found?: boolean; display_name?: string; username?: string;
+  has_public_key?: boolean; public_key_len?: number; has_backup?: boolean;
+  backup_len?: number; has_salt?: boolean; is_banned?: boolean; is_deleted?: boolean;
+};
+type TestPushResult = { note?: string; sent?: boolean; reason?: string };
 
 function cronStale(c: Cron): boolean {
   if (!c.active) return false;
@@ -44,10 +52,10 @@ export function SystemHealthSection() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiErr, setAiErr] = useState('');
   const [e2eeUserId, setE2eeUserId] = useState('');
-  const [e2eeResult, setE2eeResult] = useState<any>(null);
+  const [e2eeResult, setE2eeResult] = useState<E2eeResult | null>(null);
   const [e2eeLoading, setE2eeLoading] = useState(false);
   const [testPushUserId, setTestPushUserId] = useState('');
-  const [testPushResult, setTestPushResult] = useState<any>(null);
+  const [testPushResult, setTestPushResult] = useState<TestPushResult | null>(null);
   const [testPushLoading, setTestPushLoading] = useState(false);
   const [captcha, setCaptcha] = useState<{ status: 'loading' | 'enforced' | 'disabled' | 'error'; detail?: string }>({ status: 'loading' });
 
@@ -59,9 +67,9 @@ export function SystemHealthSection() {
     try {
       const { data, error } = await supabase.rpc('rpc_admin_check_e2ee', { p_target_id: id });
       if (error) { setE2eeResult({ note: 'RPC hata: ' + error.message }); }
-      else { setE2eeResult(data); }
-    } catch (e: any) {
-      setE2eeResult({ note: 'İstisna: ' + (e?.message || e) });
+      else { setE2eeResult(data as E2eeResult); }
+    } catch (e) {
+      setE2eeResult({ note: 'İstisna: ' + errMsg(e) });
     } finally {
       setE2eeLoading(false);
     }
@@ -75,9 +83,9 @@ export function SystemHealthSection() {
     try {
       const { data, error } = await supabase.rpc('rpc_admin_test_push', { p_target_id: id });
       if (error) { setTestPushResult({ note: 'RPC hata: ' + error.message }); }
-      else { setTestPushResult(data); }
-    } catch (e: any) {
-      setTestPushResult({ note: 'İstisna: ' + (e?.message || e) });
+      else { setTestPushResult(data as TestPushResult); }
+    } catch (e) {
+      setTestPushResult({ note: 'İstisna: ' + errMsg(e) });
     } finally {
       setTestPushLoading(false);
     }
@@ -107,11 +115,11 @@ export function SystemHealthSection() {
         headers: { apikey: anon, 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: 'healthcheck_nobody@example.com', password: 'x' }),
       });
-      const j: any = await res.json().catch(() => ({}));
+      const j = (await res.json().catch(() => ({}))) as { error_code?: string; msg?: string };
       if (j?.error_code === 'captcha_failed') setCaptcha({ status: 'enforced', detail: j.msg });
       else setCaptcha({ status: 'disabled', detail: `error_code=${j?.error_code ?? '—'} · ${j?.msg ?? ''}`.slice(0, 140) });
-    } catch (e: any) {
-      setCaptcha({ status: 'error', detail: e?.message || String(e) });
+    } catch (e) {
+      setCaptcha({ status: 'error', detail: errMsg(e) });
     }
   };
 
@@ -131,8 +139,8 @@ export function SystemHealthSection() {
       } else {
         setRunStatus(s => ({ ...s, [jobname]: { result: `❌ ${res.error || 'hata'}`, ok: false } }));
       }
-    } catch (e: any) {
-      setRunStatus(s => ({ ...s, [jobname]: { result: `İstisna: ${e?.message || e}`, ok: false } }));
+    } catch (e) {
+      setRunStatus(s => ({ ...s, [jobname]: { result: `İstisna: ${errMsg(e)}`, ok: false } }));
     }
   };
 
