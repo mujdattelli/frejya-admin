@@ -42,6 +42,7 @@ export function SystemHealthSection() {
   const [aiOpen, setAiOpen] = useState(false);
   const [aiFails, setAiFails] = useState<AiFailure[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiErr, setAiErr] = useState('');
   const [e2eeUserId, setE2eeUserId] = useState('');
   const [e2eeResult, setE2eeResult] = useState<any>(null);
   const [e2eeLoading, setE2eeLoading] = useState(false);
@@ -140,8 +141,10 @@ export function SystemHealthSection() {
     setAiOpen(true);
     if (aiFails === null) {
       setAiLoading(true);
+      setAiErr('');
       const { data: r, error } = await supabase.rpc('rpc_admin_ai_failures', { p_limit: 30 });
-      if (!error) setAiFails((r as AiFailure[]) || []);
+      if (error) setAiErr(error.message);
+      else setAiFails((r as AiFailure[]) || []);
       setAiLoading(false);
     }
   };
@@ -173,7 +176,7 @@ export function SystemHealthSection() {
     <div className="max-w-3xl">
       <div className="flex items-center gap-2 mb-4">
         <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-        <span className="text-white/60 text-xs">CANLI · 10 sn · son: {new Date(data.checked_at).toLocaleTimeString('tr-TR')}</span>
+        <span className="text-white/60 text-xs">CANLI · 60 sn · son: {new Date(data.checked_at).toLocaleTimeString('tr-TR')}</span>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -218,10 +221,13 @@ export function SystemHealthSection() {
         <div className="bg-card rounded-lg p-3 border border-white/5 mb-6">
           <p className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2">AI 24s Hata Listesi (en son 30)</p>
           {aiLoading && <p className="text-white/40 text-xs">Yükleniyor…</p>}
-          {!aiLoading && aiFails && aiFails.length === 0 && (
+          {!aiLoading && aiErr && (
+            <p className="text-red-400 text-xs">Liste alınamadı: {aiErr}</p>
+          )}
+          {!aiLoading && !aiErr && aiFails && aiFails.length === 0 && (
             <p className="text-white/40 text-xs">Son 24 saatte AI hatası yok 🎉</p>
           )}
-          {!aiLoading && aiFails && aiFails.length > 0 && (
+          {!aiLoading && !aiErr && aiFails && aiFails.length > 0 && (
             <div className="space-y-1 max-h-64 overflow-auto">
               {aiFails.map((f, idx) => (
                 <div key={idx} className="bg-black/30 rounded p-2 text-[11px]">

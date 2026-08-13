@@ -214,12 +214,12 @@ export function RolesSection() {
                   </p>
                   <p className="text-[10px] mt-0.5 text-white/35">
                     {u.isEmailVerified && u.isPhoneVerified
-                      ? 'kaynak: Google/Apple girişi + telefon'
+                      ? 'kaynak: doğrulanmış e-posta + manuel onay'
                       : u.isEmailVerified
-                        ? 'kaynak: Google/Apple ile giriş — kalıcı'
+                        ? 'kaynak: doğrulanmış e-posta (Google/Apple girişi) — kalıcı'
                         : u.isPhoneVerified
-                          ? 'kaynak: telefon / manuel onay'
-                          : 'doğrulanmış giriş veya telefon yok'}
+                          ? 'kaynak: manuel onay (admin)'
+                          : 'doğrulanmış e-posta yok, manuel onay yok'}
                   </p>
                 </div>
                 <div className="flex gap-1.5 shrink-0">
