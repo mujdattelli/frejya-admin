@@ -10,6 +10,22 @@ type ApiKey = {
 const maskKey = (k: string) =>
   !k || k.trim() === '' ? '(boş)' : k.length <= 8 ? k : `${k.slice(0, 5)}…${k.slice(-4)}`;
 
+const StatusBadge = ({ status }: { status?: string }) => {
+  if (status === 'dead') {
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">🔴 Ölü (403)</span>;
+  }
+  if (status === 'invalid') {
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 shrink-0">🔴 Geçersiz (400)</span>;
+  }
+  if (status === 'exhausted') {
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 shrink-0">🟡 Kota Dolu</span>;
+  }
+  if (status === 'active') {
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">🟢 Aktif</span>;
+  }
+  return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/50 border border-white/10 shrink-0">{status || 'active'}</span>;
+};
+
 export function ApiMonitorSection() {
   const [freeKeys, setFreeKeys] = useState<ApiKey[]>([]);
   const [paidKeys, setPaidKeys] = useState<ApiKey[]>([]);
@@ -58,7 +74,7 @@ export function ApiMonitorSection() {
           <div key={i} className="bg-card rounded-lg p-3 mb-2 border border-white/5">
             <div className="flex justify-between items-center mb-2">
               <span className="text-primary font-mono text-sm">{maskKey(k.key)}</span>
-              <span className="text-white/50 text-xs capitalize">{k.status || 'active'}</span>
+              <StatusBadge status={k.status} />
             </div>
             <Bar used={used} total={total} color="#10B981" />
             <p className="text-white/40 text-[10px] mt-1 text-right">{used} / {total}</p>
@@ -75,7 +91,7 @@ export function ApiMonitorSection() {
           <div key={i} className="bg-card rounded-lg p-3 mb-2 border border-white/5">
             <div className="flex justify-between items-center mb-2">
               <span className="text-primary font-mono text-sm">{maskKey(k.key)}</span>
-              <span className="text-white/50 text-xs capitalize">{k.status || 'active'}</span>
+              <StatusBadge status={k.status} />
             </div>
             <Bar used={used} total={total} color="#EF4444" />
             <p className="text-white/40 text-[10px] mt-1 text-right">{used} / {total}</p>
