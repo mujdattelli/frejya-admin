@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Clickjacking testi (GECICI)</title>
+    <style>
+      body { font-family: system-ui; background: #111; color: #eee; padding: 16px; }
+      iframe { width: 420px; height: 300px; border: 3px solid #e11; background: #fff; }
+      p { font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h3>Saldirgan sayfasi taklidi — panel iframe icine gomuldu</h3>
+    <p>Beklenen: panel ya kendini uste tasiyip bu sayfayi degistirir, ya da cerceve icinde BOS kalir.</p>
+    <iframe id="victim" src="/" sandbox="allow-scripts allow-same-origin"></iframe>
+    <p id="verdict">olculuyor…</p>
+    <script>
+      setTimeout(function () {
+        var f = document.getElementById('victim');
+        var out = document.getElementById('verdict');
+        try {
+          var d = f.contentDocument;
+          var rootHtml = d && d.getElementById('root') ? d.getElementById('root').innerHTML.length : -1;
+          var htmlDisplay = d ? getComputedStyle(d.documentElement).display : 'okunamadi';
+          out.textContent = 'SONUC: html display=' + htmlDisplay + ' · root icerik uzunlugu=' + rootHtml;
+        } catch (e) {
+          out.textContent = 'SONUC: cerceve icerigine erisilemedi (' + e.message + ')';
+        }
+      }, 2500);
+    </script>
+  </body>
+</html>

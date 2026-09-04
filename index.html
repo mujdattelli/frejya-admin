@@ -5,6 +5,22 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Frejya Admin</title>
+    <!-- Clickjacking savunmasi: GitHub Pages ozel header (X-Frame-Options /
+         CSP frame-ancestors) vermedigi icin istemci tarafi framekiller.
+         Once icerik gizli; yalniz en ust pencerede acildiginda gorunur olur.
+         Cerceve icindeyse ust pencereyi kendine yonlendirmeyi dener; tarayici
+         bu yonlendirmeyi engellerse (sandbox) icerik GIZLI kalir. -->
+    <style id="frame-guard">html { display: none !important; }</style>
+    <script>
+      (function () {
+        if (window.self === window.top) {
+          var s = document.getElementById('frame-guard');
+          if (s) s.remove();
+        } else {
+          try { window.top.location = window.self.location; } catch (e) { /* sandbox: gizli kalir */ }
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
