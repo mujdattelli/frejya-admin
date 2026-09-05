@@ -34,21 +34,21 @@ const StatusBadge = ({ status, checking }: { status?: string; checking?: boolean
     return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 animate-pulse shrink-0">⏳ Test Ediliyor...</span>;
   }
   if (status === 'dead') {
-    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 shrink-0" title="403: Proje erişimi reddedildi veya silindi">🔴 Ölü (403)</span>;
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 shrink-0" title="403: Proje erişimi reddedildi veya silindi">🔴 Çalışmıyor (403)</span>;
   }
   if (status === 'invalid') {
-    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 shrink-0" title="400: API anahtarı geçersiz">🔴 Geçersiz (400)</span>;
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 shrink-0" title="400: API anahtarı geçersiz">🔴 Çalışmıyor (400)</span>;
   }
   if (status === 'exhausted') {
     return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 shrink-0" title="429: Günlük/dakikalık kota aşıldı">🟡 Kota Dolu</span>;
   }
   if (status === 'active') {
-    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0" title="200: Sağlıklı ve aktif">🟢 Aktif</span>;
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0" title="200: Sağlıklı ve çalışıyor">🟢 Çalışıyor</span>;
   }
   if (status === 'error') {
     return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-500/20 text-gray-400 border border-gray-500/30 shrink-0" title="Bağlantı veya sunucu hatası">⚪ Ağ Hatası</span>;
   }
-  return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/50 border border-white/10 shrink-0">⚪ Bilinmiyor</span>;
+  return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/50 border border-white/10 shrink-0">⚪ Kontrol Edilmedi</span>;
 };
 
 export function SettingsSection() {
@@ -121,18 +121,6 @@ export function SettingsSection() {
     setPaidKeys(newPaid);
     setTestingAll(false);
     setMsg('Test tamamlandı. Durumları kalıcı kaydetmek için "Anahtarları Kaydet" butonuna basın.');
-  };
-
-  const purgeDeadKeys = () => {
-    const isDead = (k: ApiKey) => k.status === 'dead' || k.status === 'invalid';
-    const deadCount = freeKeys.filter(isDead).length + paidKeys.filter(isDead).length;
-    if (deadCount === 0) {
-      setMsg('Temizlenecek ölü veya geçersiz anahtar bulunamadı.');
-      return;
-    }
-    setFreeKeys(prev => prev.filter(k => !isDead(k)));
-    setPaidKeys(prev => prev.filter(k => !isDead(k)));
-    setMsg(`${deadCount} adet ölü/geçersiz anahtar listeden kaldırıldı. Kalıcı kaydetmek için "Anahtarları Kaydet"e basın.`);
   };
 
   const saveKeys = async () => {
@@ -220,26 +208,15 @@ export function SettingsSection() {
       <div className="bg-card rounded-xl p-5 border-l-4 border-emerald-500 border-y border-r border-white/5 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h3 className="font-bold text-base">Dinamik API Anahtarı Yönetimi</h3>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={testAllKeys}
-              disabled={testingAll || saving}
-              className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg px-3 py-1.5 disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
-              title="Listedeki tüm anahtarlara 1 token'lık hafif test çağrısı gönderir"
-            >
-              {testingAll ? '⏳ Test Ediliyor...' : '⚡ Tümünü Test Et'}
-            </button>
-            <button
-              type="button"
-              onClick={purgeDeadKeys}
-              disabled={testingAll || saving}
-              className="bg-red-900/50 hover:bg-red-800/80 text-red-200 border border-red-700/40 text-xs font-bold rounded-lg px-3 py-1.5 disabled:opacity-50 flex items-center gap-1.5"
-              title="403 ve 400 durumundaki ölü anahtarları listeden çıkarır"
-            >
-              🗑️ Ölüleri Temizle
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={testAllKeys}
+            disabled={testingAll || saving}
+            className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg px-3 py-1.5 disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+            title="Listedeki tüm anahtarları test edip yanlarına durum işareti koyar"
+          >
+            {testingAll ? '⏳ Test Ediliyor...' : '⚡ Durumları Kontrol Et'}
+          </button>
         </div>
 
         <KeyList list={freeKeys} setList={setFreeKeys} color="#10B981" label="Ücretsiz Anahtarlar" kind="free" />

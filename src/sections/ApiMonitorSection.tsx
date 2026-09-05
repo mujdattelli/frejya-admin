@@ -12,18 +12,18 @@ const maskKey = (k: string) =>
 
 const StatusBadge = ({ status }: { status?: string }) => {
   if (status === 'dead') {
-    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">🔴 Ölü (403)</span>;
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">🔴 Çalışmıyor (403)</span>;
   }
   if (status === 'invalid') {
-    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 shrink-0">🔴 Geçersiz (400)</span>;
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">🔴 Çalışmıyor (400)</span>;
   }
   if (status === 'exhausted') {
     return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 shrink-0">🟡 Kota Dolu</span>;
   }
   if (status === 'active') {
-    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">🟢 Aktif</span>;
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">🟢 Çalışıyor</span>;
   }
-  return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/50 border border-white/10 shrink-0">{status || 'active'}</span>;
+  return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/50 border border-white/10 shrink-0">⚪ {status || 'Kontrol Edilmedi'}</span>;
 };
 
 export function ApiMonitorSection() {
