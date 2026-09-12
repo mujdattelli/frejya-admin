@@ -13,11 +13,17 @@ type Stats = {
 
 export function OverviewSection({ onNavigate }: { onNavigate?: (section: string) => void }) {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [keyCount, setKeyCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc('rpc_admin_dashboard_stats');
+    supabase.from('system_settings').select('free_keys, paid_keys').eq('id', 'agent_api_keys').single().then(({ data: ak }) => {
+      const f = Array.isArray((ak as any)?.free_keys) ? (ak as any).free_keys.length : 0;
+      const p = Array.isArray((ak as any)?.paid_keys) ? (ak as any).paid_keys.length : 0;
+      setKeyCount(f + p);
+    });
     setLoading(false);
     if (error) { setMsg('Yükleme hatası: ' + error.message); return; }
     setStats(data as Stats);
@@ -33,6 +39,7 @@ export function OverviewSection({ onNavigate }: { onNavigate?: (section: string)
     { label: 'Onay bekleyen fotoğraf', value: stats.pending_photos, color: '#C0A080', urgent: stats.pending_photos > 0, section: 'photos' },
     { label: 'Bekleyen şikayet', value: stats.pending_reports, color: '#EF4444', urgent: stats.pending_reports > 0, section: 'reports' },
     { label: 'Bekleyen destek talebi', value: stats.pending_tickets, color: '#14B8A6', urgent: stats.pending_tickets > 0, section: 'support' },
+    { label: 'Gemini AI Anahtarı', value: keyCount, color: '#F59E0B', section: 'settings' },
     { label: 'Banlı kullanıcı', value: stats.banned_users, color: '#F59E0B', section: 'banned' },
     { label: 'Toplam kullanıcı', value: stats.total_users, color: '#10B981' },
     { label: 'Bugün katılan', value: stats.new_today, color: '#A855F7' },

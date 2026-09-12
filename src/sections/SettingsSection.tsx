@@ -190,6 +190,28 @@ export function SettingsSection() {
     setMsg('Ajan & Arama AI anahtarları başarıyla kaydedildi.');
   };
 
+  const copyPhotoToAgent = () => {
+    const existing = new Set(agentFreeKeys.map((k) => k.key.trim()));
+    const toAdd = photoFreeKeys.filter((k) => k.key.trim() && !existing.has(k.key.trim()));
+    if (toAdd.length === 0) {
+      setMsg('Fotoğraf havuzundaki tüm anahtarlar zaten Ajan havuzunda mevcut.');
+      return;
+    }
+    setAgentFreeKeys([...agentFreeKeys, ...toAdd.map((k) => ({ ...k, usage_count: 0, dailyUsage: 0, limit: 1050 }))]);
+    setMsg(`${toAdd.length} adet Gemini anahtarı Fotoğraf havuzundan Ajan havuzuna aktarıldı. Kaydetmeyi unutmayın!`);
+  };
+
+  const copyAgentToPhoto = () => {
+    const existing = new Set(photoFreeKeys.map((k) => k.key.trim()));
+    const toAdd = agentFreeKeys.filter((k) => k.key.trim() && !existing.has(k.key.trim()));
+    if (toAdd.length === 0) {
+      setMsg('Ajan havuzundaki tüm anahtarlar zaten Fotoğraf havuzunda mevcut.');
+      return;
+    }
+    setPhotoFreeKeys([...photoFreeKeys, ...toAdd.map((k) => ({ ...k, usage_count: 0, dailyUsage: 0, limit: 100 }))]);
+    setMsg(`${toAdd.length} adet Gemini anahtarı Ajan havuzundan Fotoğraf havuzuna aktarıldı. Kaydetmeyi unutmayın!`);
+  };
+
   if (loading) return <Loading />;
 
   const KeyList = ({ list, setList, color, label, kind, isAgent }: {
@@ -375,23 +397,33 @@ export function SettingsSection() {
     <div className="max-w-2xl">
       <StatusMessage text={msg} />
 
-      {/* Sıralı Havuz ve Mimari Bilgilendirme Kartı */}
-      <div className="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-white/80 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="font-bold text-amber-300 text-sm">🔑 Sıralı API Havuz Sistemi (AI Fotoğraf Onayı ile Birebir Aynı)</span>
-          <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">Otomatik Failover</span>
+      {/* Google Gemini AI Bilgilendirme ve Hızlı Erişim Kartı */}
+      <div className="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-white/80 space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-amber-300 text-sm">🤖 Google Gemini API Anahtar Havuzu</span>
+            <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">Dinamik Havuz</span>
+          </div>
+          <a
+            href="https://aistudio.google.com/app/apikey"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm shrink-0"
+          >
+            🌐 Google AI Studio'dan Ücretsiz Key Al ↗
+          </a>
         </div>
         <p className="text-[11px] text-white/70 leading-relaxed">
-          Tıpkı Fotoğraf Onayındaki gibi sıralı havuz mimarisi çalışır: Sistem ilk sıradaki anahtarla başlar. Kota dolarsa (429) veya geçersiz olursa anında sıradaki 2., 3. anahtara geçer. Her gece yarısı (PT) kotalar sıfırlanıp başa döner.
+          Frejya'nın tüm yapay zeka özellikleri (Ajan Sohbeti, Arama Fısıltısı, Sohbet Kıvılcımı, Aura Kalemi, Profil Ajan Notu ve Fotoğraf Doğrulama) aşağıdaki Google Gemini API anahtarlarıyla çalışır. Birden fazla anahtar ekleyerek sıfır maliyetle kotasız çalışabilirsiniz.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-[11px]">
-          <div className="p-2 rounded bg-black/40 border border-white/5">
-            <span className="font-bold text-amber-200 block">🏛️ Keşif Masası (Arama):</span>
-            PostgreSQL veritabanındaki gerçek profillerdir, LLM API anahtarı harcamaz.
+          <div className="p-2.5 rounded-lg bg-black/40 border border-white/5">
+            <span className="font-bold text-amber-200 block mb-1">🧠 Ajan & Sohbet AI Havuzu:</span>
+            <p className="text-white/60 text-[10px]">Ajan Sohbeti (mülakat), Arama Fısıltısı, Sohbet Kıvılcımı, Aura Kalemi ve 512-d Vektör embedding için kullanılır.</p>
           </div>
-          <div className="p-2 rounded bg-black/40 border border-white/5">
-            <span className="font-bold text-amber-200 block">🧠 Yapay Zeka Ajanları:</span>
-            Fısıltı, Kıvılcım, Aura Kalemi ve Profil Notu aşağıdaki havuzdaki aktif anahtarları sırayla tüketir.
+          <div className="p-2.5 rounded-lg bg-black/40 border border-white/5">
+            <span className="font-bold text-emerald-200 block mb-1">📷 Fotoğraf Doğrulama Havuzu:</span>
+            <p className="text-white/60 text-[10px]">Kayıttaki solo insan, gerçek yüz ve biyometrik uygunluk analizi için arka plan worker'ında kullanılır.</p>
           </div>
         </div>
       </div>
@@ -405,8 +437,8 @@ export function SettingsSection() {
             activeTab === 'agent' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm' : 'text-white/60 hover:text-white'
           }`}
         >
-          <span>🧠 Ajan & Arama AI Havuzu</span>
-          <span className="text-[10px] px-1.5 py-0.2 bg-black/40 rounded-full">{agentFreeKeys.length + agentPaidKeys.length}</span>
+          <span>🧠 Ajan & Sohbet AI Havuzu (Gemini)</span>
+          <span className="text-[10px] px-1.5 py-0.2 bg-black/40 rounded-full font-mono">{agentFreeKeys.length + agentPaidKeys.length}</span>
         </button>
         <button
           type="button"
@@ -415,8 +447,8 @@ export function SettingsSection() {
             activeTab === 'photo' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm' : 'text-white/60 hover:text-white'
           }`}
         >
-          <span>📷 Fotoğraf Doğrulama Havuzu</span>
-          <span className="text-[10px] px-1.5 py-0.2 bg-black/40 rounded-full">{photoFreeKeys.length + photoPaidKeys.length}</span>
+          <span>📷 Fotoğraf Doğrulama Havuzu (Gemini)</span>
+          <span className="text-[10px] px-1.5 py-0.2 bg-black/40 rounded-full font-mono">{photoFreeKeys.length + photoPaidKeys.length}</span>
         </button>
       </div>
 
@@ -424,20 +456,32 @@ export function SettingsSection() {
         <div className="bg-card rounded-xl p-5 border-l-4 border-amber-500 border-y border-r border-white/5 mb-4 shadow-lg">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
-              <h3 className="font-bold text-base text-amber-200">Ajan & Arama AI Havuzu (Gemini)</h3>
+              <h3 className="font-bold text-base text-amber-200">Ajan & Sohbet AI Havuzu (Gemini 1.5 Flash)</h3>
               <p className="text-white/50 text-[11px] mt-0.5">
-                Fısıltı, Sohbet Kıvılcımı, Aura Kalemi, Ajan Notu ve 512-d Semantik Vektör Arama için kullanılır.
+                Ajan mülakatı, Fısıltı, Sohbet Kıvılcımı, Aura Kalemi, Profil Notu ve 512-d Vektör Arama için kullanılır.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => testAllKeys(true)}
-              disabled={testingAll || saving}
-              className="bg-amber-600 hover:bg-amber-500 text-black text-xs font-bold rounded-lg px-3 py-1.5 disabled:opacity-50 flex items-center gap-1.5 shadow-sm shrink-0"
-              title="Tüm Ajan anahtarlarını test eder"
-            >
-              {testingAll ? '⏳ Test Ediliyor...' : '⚡ Durumları Kontrol Et'}
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {photoFreeKeys.length > 0 && (
+                <button
+                  type="button"
+                  onClick={copyPhotoToAgent}
+                  className="bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-lg px-2.5 py-1.5 transition-colors flex items-center gap-1"
+                  title="Fotoğraf havuzundaki anahtarları Ajan havuzuna da ekle"
+                >
+                  📋 Fotoğraftan Kopyala
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => testAllKeys(true)}
+                disabled={testingAll || saving}
+                className="bg-amber-600 hover:bg-amber-500 text-black text-xs font-bold rounded-lg px-3 py-1.5 disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+                title="Tüm Ajan anahtarlarını Google API ile test eder"
+              >
+                {testingAll ? '⏳ Test Ediliyor...' : '⚡ Durumları Kontrol Et'}
+              </button>
+            </div>
           </div>
 
           <KeyList list={agentFreeKeys} setList={setAgentFreeKeys} color="#F59E0B" label="Ücretsiz Ajan Anahtarları" kind="free" isAgent={true} />
@@ -463,15 +507,27 @@ export function SettingsSection() {
                 Kayıttaki gerçek yüz, solo insan ve çekicilik puanlama analizleri için kullanılır.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => testAllKeys(false)}
-              disabled={testingAll || saving}
-              className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg px-3 py-1.5 disabled:opacity-50 flex items-center gap-1.5 shadow-sm shrink-0"
-              title="Tüm Fotoğraf anahtarlarını test eder"
-            >
-              {testingAll ? '⏳ Test Ediliyor...' : '⚡ Durumları Kontrol Et'}
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {agentFreeKeys.length > 0 && (
+                <button
+                  type="button"
+                  onClick={copyAgentToPhoto}
+                  className="bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-lg px-2.5 py-1.5 transition-colors flex items-center gap-1"
+                  title="Ajan havuzundaki anahtarları Fotoğraf havuzuna da ekle"
+                >
+                  📋 Ajan Havuzundan Kopyala
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => testAllKeys(false)}
+                disabled={testingAll || saving}
+                className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg px-3 py-1.5 disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+                title="Tüm Fotoğraf anahtarlarını test eder"
+              >
+                {testingAll ? '⏳ Test Ediliyor...' : '⚡ Durumları Kontrol Et'}
+              </button>
+            </div>
           </div>
 
           <KeyList list={photoFreeKeys} setList={setPhotoFreeKeys} color="#10B981" label="Ücretsiz Fotoğraf Anahtarları" kind="free" isAgent={false} />
