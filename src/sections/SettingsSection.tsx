@@ -13,7 +13,7 @@ async function testSingleKey(apiKey: string): Promise<KeyHealthStatus> {
   const trimmed = apiKey.trim();
   if (!trimmed) return 'invalid';
   try {
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': trimmed },
       body: JSON.stringify({ contents: [{ parts: [{ text: 'p' }] }] }),
