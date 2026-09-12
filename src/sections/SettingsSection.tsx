@@ -13,7 +13,7 @@ async function testSingleKey(apiKey: string): Promise<KeyHealthStatus> {
   const trimmed = apiKey.trim();
   if (!trimmed) return 'invalid';
   try {
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent', {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': trimmed },
       body: JSON.stringify({ contents: [{ parts: [{ text: 'p' }] }] }),
@@ -52,8 +52,16 @@ const StatusBadge = ({ status, checking }: { status?: string; checking?: boolean
 };
 
 export function SettingsSection() {
-  const [freeKeys, setFreeKeys] = useState<ApiKey[]>([]);
-  const [paidKeys, setPaidKeys] = useState<ApiKey[]>([]);
+  const [activeTab, setActiveTab] = useState<'photo' | 'agent'>('agent');
+  
+  // Fotoğraf Havuzu
+  const [photoFreeKeys, setPhotoFreeKeys] = useState<ApiKey[]>([]);
+  const [photoPaidKeys, setPhotoPaidKeys] = useState<ApiKey[]>([]);
+  
+  // Ajan & Arama Havuzu
+  const [agentFreeKeys, setAgentFreeKeys] = useState<ApiKey[]>([]);
+  const [agentPaidKeys, setAgentPaidKeys] = useState<ApiKey[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingAll, setTestingAll] = useState(false);
@@ -70,167 +78,415 @@ export function SettingsSection() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data: keys } = await supabase.from('system_settings').select('*').eq('id', 'api_keys').single();
-    const k = keys as { free_keys?: unknown; paid_keys?: unknown } | null;
-    setFreeKeys(Array.isArray(k?.free_keys) ? k.free_keys.map(normKey) : []);
-    setPaidKeys(Array.isArray(k?.paid_keys) ? k.paid_keys.map(normKey) : []);
+    
+    // Fotoğraf anahtarları
+    const { data: photoData } = await supabase.from('system_settings').select('*').eq('id', 'api_keys').single();
+    const pk = photoData as { free_keys?: unknown; paid_keys?: unknown } | null;
+    setPhotoFreeKeys(Array.isArray(pk?.free_keys) ? pk.free_keys.map(normKey) : []);
+    setPhotoPaidKeys(Array.isArray(pk?.paid_keys) ? pk.paid_keys.map(normKey) : []);
+
+    // Ajan & Arama anahtarları
+    const { data: agentData } = await supabase.from('system_settings').select('*').eq('id', 'agent_api_keys').single();
+    const ak = agentData as { free_keys?: unknown; paid_keys?: unknown } | null;
+    setAgentFreeKeys(Array.isArray(ak?.free_keys) ? ak.free_keys.map(normKey) : []);
+    setAgentPaidKeys(Array.isArray(ak?.paid_keys) ? ak.paid_keys.map(normKey) : []);
+
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  const testKey = async (id: string, keyVal: string, listType: 'free' | 'paid', idx: number) => {
+  const testKey = async (id: string, keyVal: string, listType: 'free' | 'paid', idx: number, isAgent: boolean) => {
     setTestingKeyId(id);
     const result = await testSingleKey(keyVal);
     setTestingKeyId(null);
-    if (listType === 'free') {
-      setFreeKeys(prev => {
-        const next = [...prev];
-        if (next[idx]) next[idx] = { ...next[idx], status: result };
-        return next;
-      });
+    
+    if (isAgent) {
+      if (listType === 'free') {
+        setAgentFreeKeys(prev => {
+          const next = [...prev];
+          if (next[idx]) next[idx] = { ...next[idx], status: result };
+          return next;
+        });
+      } else {
+        setAgentPaidKeys(prev => {
+          const next = [...prev];
+          if (next[idx]) next[idx] = { ...next[idx], status: result };
+          return next;
+        });
+      }
     } else {
-      setPaidKeys(prev => {
-        const next = [...prev];
-        if (next[idx]) next[idx] = { ...next[idx], status: result };
-        return next;
-      });
+      if (listType === 'free') {
+        setPhotoFreeKeys(prev => {
+          const next = [...prev];
+          if (next[idx]) next[idx] = { ...next[idx], status: result };
+          return next;
+        });
+      } else {
+        setPhotoPaidKeys(prev => {
+          const next = [...prev];
+          if (next[idx]) next[idx] = { ...next[idx], status: result };
+          return next;
+        });
+      }
     }
   };
 
-  const testAllKeys = async () => {
+  const testAllKeys = async (isAgent: boolean) => {
     setTestingAll(true);
-    setMsg('Tüm anahtarlar test ediliyor...');
+    setMsg('Listedeki tüm anahtarlar test ediliyor...');
 
-    const newFree = [...freeKeys];
-    for (let i = 0; i < newFree.length; i++) {
-      if (newFree[i].key.trim()) {
-        const res = await testSingleKey(newFree[i].key);
-        newFree[i] = { ...newFree[i], status: res };
+    const freeList = isAgent ? [...agentFreeKeys] : [...photoFreeKeys];
+    for (let i = 0; i < freeList.length; i++) {
+      if (freeList[i].key.trim()) {
+        const res = await testSingleKey(freeList[i].key);
+        freeList[i] = { ...freeList[i], status: res };
       }
     }
-    setFreeKeys(newFree);
+    if (isAgent) setAgentFreeKeys(freeList); else setPhotoFreeKeys(freeList);
 
-    const newPaid = [...paidKeys];
-    for (let i = 0; i < newPaid.length; i++) {
-      if (newPaid[i].key.trim()) {
-        const res = await testSingleKey(newPaid[i].key);
-        newPaid[i] = { ...newPaid[i], status: res };
+    const paidList = isAgent ? [...agentPaidKeys] : [...photoPaidKeys];
+    for (let i = 0; i < paidList.length; i++) {
+      if (paidList[i].key.trim()) {
+        const res = await testSingleKey(paidList[i].key);
+        paidList[i] = { ...paidList[i], status: res };
       }
     }
-    setPaidKeys(newPaid);
+    if (isAgent) setAgentPaidKeys(paidList); else setPhotoPaidKeys(paidList);
+
     setTestingAll(false);
-    setMsg('Test tamamlandı. Durumları kalıcı kaydetmek için "Anahtarları Kaydet" butonuna basın.');
+    setMsg('Test tamamlandı. Durumları kalıcı kaydetmek için "Kaydet" butonuna basın.');
   };
 
-  const saveKeys = async () => {
+  const savePhotoKeys = async () => {
     setSaving(true); setMsg('');
     const { data, error } = await supabase.rpc('rpc_admin_save_api_keys', {
-      p_free: freeKeys.filter((k) => k.key.trim() !== ''),
-      p_paid: paidKeys.filter((k) => k.key.trim() !== ''),
+      p_free: photoFreeKeys.filter((k) => k.key.trim() !== ''),
+      p_paid: photoPaidKeys.filter((k) => k.key.trim() !== ''),
     });
     setSaving(false);
     if (error) { setMsg('Hata: ' + error.message); return; }
     const d = data as { free_keys?: unknown; paid_keys?: unknown } | null;
     if (d) {
-      setFreeKeys(Array.isArray(d.free_keys) ? d.free_keys.map(normKey) : []);
-      setPaidKeys(Array.isArray(d.paid_keys) ? d.paid_keys.map(normKey) : []);
+      setPhotoFreeKeys(Array.isArray(d.free_keys) ? d.free_keys.map(normKey) : []);
+      setPhotoPaidKeys(Array.isArray(d.paid_keys) ? d.paid_keys.map(normKey) : []);
     }
-    setMsg('API anahtarları başarıyla kaydedildi.');
+    setMsg('Fotoğraf API anahtarları başarıyla kaydedildi.');
+  };
+
+  const saveAgentKeys = async () => {
+    setSaving(true); setMsg('');
+    const { data, error } = await supabase.rpc('rpc_admin_save_agent_api_keys', {
+      p_free: agentFreeKeys.filter((k) => k.key.trim() !== ''),
+      p_paid: agentPaidKeys.filter((k) => k.key.trim() !== ''),
+    });
+    setSaving(false);
+    if (error) { setMsg('Hata: ' + error.message); return; }
+    const d = data as { free_keys?: unknown; paid_keys?: unknown } | null;
+    if (d) {
+      setAgentFreeKeys(Array.isArray(d.free_keys) ? d.free_keys.map(normKey) : []);
+      setAgentPaidKeys(Array.isArray(d.paid_keys) ? d.paid_keys.map(normKey) : []);
+    }
+    setMsg('Ajan & Arama AI anahtarları başarıyla kaydedildi.');
   };
 
   if (loading) return <Loading />;
 
-  const KeyList = ({ list, setList, color, label, kind }: {
-    list: ApiKey[]; setList: React.Dispatch<React.SetStateAction<ApiKey[]>>; color: string; label: string; kind: 'free' | 'paid';
-  }) => (
-    <div className="mb-6">
-      <div className="flex justify-between items-center mb-2">
-        <span className="font-bold uppercase text-xs" style={{ color }}>{label} ({list.length})</span>
-        <button
-          type="button"
-          onClick={() => setList([...list, { key: '', status: 'active', usage_count: 0, limit: 100 }])}
-          className="rounded px-2 py-0.5 text-lg leading-none"
-          style={{ background: color + '22', color }}
-          title="Yeni anahtar ekle"
-        >+</button>
-      </div>
-      {list.length === 0 && <p className="text-white/40 text-xs italic">Anahtar yok.</p>}
-      {list.map((k, i) => {
-        const id = `${kind}-${i}`;
-        const shown = revealed.has(id);
-        const isChecking = testingKeyId === id;
-        return (
-          <div key={i} className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1.5 mb-2 border border-white/10">
-            <StatusBadge status={k.status} checking={isChecking} />
-            <input
-              type={shown ? 'text' : 'password'}
-              autoComplete="off"
-              value={k.key}
-              onChange={(e) => { const n = [...list]; n[i] = { ...n[i], key: e.target.value }; setList(n); }}
-              placeholder="API anahtarı"
-              className="flex-1 bg-transparent text-primary font-mono text-xs outline-none py-1.5 min-w-0"
-            />
+  const KeyList = ({ list, setList, color, label, kind, isAgent }: {
+    list: ApiKey[]; setList: React.Dispatch<React.SetStateAction<ApiKey[]>>; color: string; label: string; kind: 'free' | 'paid'; isAgent: boolean;
+  }) => {
+    const [quickInput, setQuickInput] = useState('');
+    const [showBulk, setShowBulk] = useState(false);
+    const [bulkText, setBulkText] = useState('');
+
+    const handleQuickAdd = () => {
+      const val = quickInput.trim();
+      if (!val) return;
+      setList([...list, { key: val, status: 'active', usage_count: 0, limit: kind === 'free' ? 1050 : 500 }]);
+      setQuickInput('');
+    };
+
+    const handleBulkAdd = () => {
+      const lines = bulkText.split(/[\n,;]+/).map(s => s.trim()).filter(s => s.length > 5);
+      if (lines.length === 0) return;
+      const existing = new Set(list.map(k => k.key.trim()));
+      const newEntries = lines
+        .filter(k => !existing.has(k))
+        .map(k => ({ key: k, status: 'active', usage_count: 0, limit: kind === 'free' ? 1050 : 500 } as ApiKey));
+      setList([...list, ...newEntries]);
+      setBulkText('');
+      setShowBulk(false);
+    };
+
+    return (
+      <div className="mb-6 bg-white/[0.02] border border-white/5 rounded-xl p-4">
+        <div className="flex flex-wrap justify-between items-center gap-2 mb-3 pb-2 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <span className="font-bold uppercase text-xs tracking-wider" style={{ color }}>{label}</span>
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-white/70">
+              {list.length} adet
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              disabled={testingAll || isChecking || !k.key.trim()}
-              onClick={() => testKey(id, k.key, kind, i)}
-              className="text-emerald-400 hover:text-emerald-300 text-xs shrink-0 disabled:opacity-30 px-1"
-              title="Bu anahtarı Google API ile anlık test et"
+              onClick={() => setShowBulk(!showBulk)}
+              className="text-xs px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-white/80 transition-colors flex items-center gap-1"
+              title="Birden fazla anahtarı toplu yapıştır"
             >
-              Test
+              📋 {showBulk ? 'Toplu Yapıştırmayı Kapat' : 'Toplu Anahtar Yapıştır'}
             </button>
             <button
               type="button"
-              onClick={() => toggleReveal(id)}
-              className="text-white/50 hover:text-white text-xs shrink-0 px-1"
+              onClick={() => setList([...list, { key: '', status: 'active', usage_count: 0, limit: kind === 'free' ? 1050 : 500 }])}
+              className="rounded px-2.5 py-1 text-xs font-bold transition-all flex items-center gap-1"
+              style={{ background: color + '25', color, border: `1px solid ${color}44` }}
+              title="Tek tek yeni anahtar satırı ekle"
             >
-              {shown ? 'Gizle' : 'Göster'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setList(list.filter((_, x) => x !== i))}
-              className="text-red-400 hover:text-red-300 text-xs shrink-0 px-1"
-              title="Bu anahtarı kaldır"
-            >
-              Sil
+              + Boş Satır Ekle
             </button>
           </div>
-        );
-      })}
-    </div>
-  );
+        </div>
+
+        {/* Toplu Anahtar Ekleme Alanı */}
+        {showBulk && (
+          <div className="mb-4 p-3 bg-black/60 border border-amber-500/30 rounded-lg">
+            <label className="block text-xs font-medium text-amber-200 mb-1">
+              Toplu Google Gemini API Anahtarları (Her satıra bir anahtar):
+            </label>
+            <textarea
+              rows={3}
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              placeholder="AIzaSyA1b2c3d4e5f6...&#10;AIzaSyX9y8z7w6v5u4..."
+              className="w-full bg-black/80 border border-white/20 rounded p-2 text-xs font-mono text-white placeholder-white/30 focus:border-amber-400 outline-none"
+            />
+            <div className="flex justify-end gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => setShowBulk(false)}
+                className="px-3 py-1 text-xs text-white/50 hover:text-white"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkAdd}
+                className="px-3 py-1 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-black rounded transition-colors"
+              >
+                Havuza Ekle
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Liste Boş Durumu */}
+        {list.length === 0 ? (
+          <div className="border border-dashed border-white/20 rounded-xl p-5 text-center my-2 bg-black/20">
+            <p className="text-white/60 text-xs mb-3">Bu havuzda henüz kayıtlı Gemini API anahtarı bulunmuyor.</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => setList([{ key: '', status: 'active', usage_count: 0, limit: kind === 'free' ? 1050 : 500 }])}
+                className="px-3 py-1.5 text-xs font-bold rounded-lg transition-all"
+                style={{ background: color, color: '#000' }}
+              >
+                + Yeni API Anahtarı Ekle
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowBulk(true)}
+                className="px-3 py-1.5 text-xs font-medium bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all"
+              >
+                📋 Toplu Yapıştır
+              </button>
+            </div>
+          </div>
+        ) : (
+          list.map((k, i) => {
+            const id = `${isAgent ? 'agent' : 'photo'}-${kind}-${i}`;
+            const shown = revealed.has(id);
+            const isChecking = testingKeyId === id;
+            return (
+              <div key={i} className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-1.5 mb-2 border border-white/10 hover:border-white/20 transition-colors">
+                <StatusBadge status={k.status} checking={isChecking} />
+                <input
+                  type={shown ? 'text' : 'password'}
+                  autoComplete="off"
+                  value={k.key}
+                  onChange={(e) => { const n = [...list]; n[i] = { ...n[i], key: e.target.value }; setList(n); }}
+                  placeholder="Google Gemini API anahtarı (AIzaSy...)"
+                  className="flex-1 bg-transparent text-primary font-mono text-xs outline-none py-1.5 min-w-0"
+                />
+                <button
+                  type="button"
+                  disabled={testingAll || isChecking || !k.key.trim()}
+                  onClick={() => testKey(id, k.key, kind, i, isAgent)}
+                  className="text-emerald-400 hover:text-emerald-300 text-xs shrink-0 disabled:opacity-30 px-1 font-medium"
+                  title="Bu anahtarı Google Gemini API ile test et"
+                >
+                  Test
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleReveal(id)}
+                  className="text-white/50 hover:text-white text-xs shrink-0 px-1"
+                >
+                  {shown ? 'Gizle' : 'Göster'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setList(list.filter((_, x) => x !== i))}
+                  className="text-red-400 hover:text-red-300 text-xs shrink-0 px-1"
+                  title="Bu anahtarı kaldır"
+                >
+                  Sil
+                </button>
+              </div>
+            );
+          })
+        )}
+
+        {/* Hızlı Tekli Ekleme Çubuğu */}
+        <div className="mt-3 pt-3 border-t border-white/5 flex gap-2">
+          <input
+            type="text"
+            value={quickInput}
+            onChange={(e) => setQuickInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAdd(); } }}
+            placeholder="Hızlı API anahtarı yapıştır (AIzaSy...)"
+            className="flex-1 bg-black/50 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder-white/30 focus:border-white/30 outline-none"
+          />
+          <button
+            type="button"
+            onClick={handleQuickAdd}
+            disabled={!quickInput.trim()}
+            className="px-3 py-1.5 text-xs font-bold rounded-lg disabled:opacity-30 transition-all shrink-0"
+            style={{ background: color, color: '#000' }}
+          >
+            + Ekle
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="max-w-2xl">
       <StatusMessage text={msg} />
 
-      <div className="bg-card rounded-xl p-5 border-l-4 border-emerald-500 border-y border-r border-white/5 mb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <h3 className="font-bold text-base">Dinamik API Anahtarı Yönetimi</h3>
-          <button
-            type="button"
-            onClick={testAllKeys}
-            disabled={testingAll || saving}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg px-3 py-1.5 disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
-            title="Listedeki tüm anahtarları test edip yanlarına durum işareti koyar"
-          >
-            {testingAll ? '⏳ Test Ediliyor...' : '⚡ Durumları Kontrol Et'}
-          </button>
+      {/* Sıralı Havuz ve Mimari Bilgilendirme Kartı */}
+      <div className="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-white/80 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="font-bold text-amber-300 text-sm">🔑 Sıralı API Havuz Sistemi (AI Fotoğraf Onayı ile Birebir Aynı)</span>
+          <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">Otomatik Failover</span>
         </div>
+        <p className="text-[11px] text-white/70 leading-relaxed">
+          Tıpkı Fotoğraf Onayındaki gibi sıralı havuz mimarisi çalışır: Sistem ilk sıradaki anahtarla başlar. Kota dolarsa (429) veya geçersiz olursa anında sıradaki 2., 3. anahtara geçer. Her gece yarısı (PT) kotalar sıfırlanıp başa döner.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-[11px]">
+          <div className="p-2 rounded bg-black/40 border border-white/5">
+            <span className="font-bold text-amber-200 block">🏛️ Keşif Masası (Arama):</span>
+            PostgreSQL veritabanındaki gerçek profillerdir, LLM API anahtarı harcamaz.
+          </div>
+          <div className="p-2 rounded bg-black/40 border border-white/5">
+            <span className="font-bold text-amber-200 block">🧠 Yapay Zeka Ajanları:</span>
+            Fısıltı, Kıvılcım, Aura Kalemi ve Profil Notu aşağıdaki havuzdaki aktif anahtarları sırayla tüketir.
+          </div>
+        </div>
+      </div>
 
-        <KeyList list={freeKeys} setList={setFreeKeys} color="#10B981" label="Ücretsiz Anahtarlar" kind="free" />
-        <KeyList list={paidKeys} setList={setPaidKeys} color="#EF4444" label="Ücretli Anahtarlar" kind="paid" />
-
+      {/* Havuz Seçim Butonları */}
+      <div className="flex gap-2 mb-4 bg-white/5 p-1 rounded-xl border border-white/10">
         <button
           type="button"
-          onClick={saveKeys}
-          disabled={saving || testingAll}
-          className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-lg py-2.5 text-sm disabled:opacity-50 transition-colors"
+          onClick={() => { setActiveTab('agent'); setMsg(''); }}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 ${
+            activeTab === 'agent' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm' : 'text-white/60 hover:text-white'
+          }`}
         >
-          {saving ? 'Kaydediliyor…' : 'Anahtarları Kaydet'}
+          <span>🧠 Ajan & Arama AI Havuzu</span>
+          <span className="text-[10px] px-1.5 py-0.2 bg-black/40 rounded-full">{agentFreeKeys.length + agentPaidKeys.length}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => { setActiveTab('photo'); setMsg(''); }}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 ${
+            activeTab === 'photo' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm' : 'text-white/60 hover:text-white'
+          }`}
+        >
+          <span>📷 Fotoğraf Doğrulama Havuzu</span>
+          <span className="text-[10px] px-1.5 py-0.2 bg-black/40 rounded-full">{photoFreeKeys.length + photoPaidKeys.length}</span>
         </button>
       </div>
+
+      {activeTab === 'agent' && (
+        <div className="bg-card rounded-xl p-5 border-l-4 border-amber-500 border-y border-r border-white/5 mb-4 shadow-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 className="font-bold text-base text-amber-200">Ajan & Arama AI Havuzu (Gemini)</h3>
+              <p className="text-white/50 text-[11px] mt-0.5">
+                Fısıltı, Sohbet Kıvılcımı, Aura Kalemi, Ajan Notu ve 512-d Semantik Vektör Arama için kullanılır.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => testAllKeys(true)}
+              disabled={testingAll || saving}
+              className="bg-amber-600 hover:bg-amber-500 text-black text-xs font-bold rounded-lg px-3 py-1.5 disabled:opacity-50 flex items-center gap-1.5 shadow-sm shrink-0"
+              title="Tüm Ajan anahtarlarını test eder"
+            >
+              {testingAll ? '⏳ Test Ediliyor...' : '⚡ Durumları Kontrol Et'}
+            </button>
+          </div>
+
+          <KeyList list={agentFreeKeys} setList={setAgentFreeKeys} color="#F59E0B" label="Ücretsiz Ajan Anahtarları" kind="free" isAgent={true} />
+          <KeyList list={agentPaidKeys} setList={setAgentPaidKeys} color="#EF4444" label="Ücretli Ajan Anahtarları" kind="paid" isAgent={true} />
+
+          <button
+            type="button"
+            onClick={saveAgentKeys}
+            disabled={saving || testingAll}
+            className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg py-2.5 text-sm disabled:opacity-50 transition-colors shadow-md"
+          >
+            {saving ? 'Kaydediliyor…' : 'Ajan Anahtarlarını Kaydet (MFA Korumalı)'}
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'photo' && (
+        <div className="bg-card rounded-xl p-5 border-l-4 border-emerald-500 border-y border-r border-white/5 mb-4 shadow-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 className="font-bold text-base text-emerald-200">Fotoğraf Doğrulama Havuzu (Gemini)</h3>
+              <p className="text-white/50 text-[11px] mt-0.5">
+                Kayıttaki gerçek yüz, solo insan ve çekicilik puanlama analizleri için kullanılır.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => testAllKeys(false)}
+              disabled={testingAll || saving}
+              className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg px-3 py-1.5 disabled:opacity-50 flex items-center gap-1.5 shadow-sm shrink-0"
+              title="Tüm Fotoğraf anahtarlarını test eder"
+            >
+              {testingAll ? '⏳ Test Ediliyor...' : '⚡ Durumları Kontrol Et'}
+            </button>
+          </div>
+
+          <KeyList list={photoFreeKeys} setList={setPhotoFreeKeys} color="#10B981" label="Ücretsiz Fotoğraf Anahtarları" kind="free" isAgent={false} />
+          <KeyList list={photoPaidKeys} setList={setPhotoPaidKeys} color="#EF4444" label="Ücretli Fotoğraf Anahtarları" kind="paid" isAgent={false} />
+
+          <button
+            type="button"
+            onClick={savePhotoKeys}
+            disabled={saving || testingAll}
+            className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-lg py-2.5 text-sm disabled:opacity-50 transition-colors shadow-md"
+          >
+            {saving ? 'Kaydediliyor…' : 'Fotoğraf Anahtarlarını Kaydet (MFA Korumalı)'}
+          </button>
+        </div>
+      )}
 
     </div>
   );

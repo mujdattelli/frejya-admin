@@ -21,6 +21,8 @@ export const SECTIONS = [
   { key: 'overview', label: 'Genel Bakış', color: '#60A5FA' },
   { key: 'users', label: 'Kullanıcılar', color: '#3B82F6', masterOnly: true },
   { key: 'photos', label: 'Fotoğraf Onayı', color: '#C0A080' },
+  { key: 'settings', label: '🔑 API Anahtarları (Havuz)', color: '#F59E0B', masterOnly: true },
+  { key: 'api', label: 'API İzleme', color: '#A855F7', masterOnly: true },
   { key: 'support', label: 'İstekler', color: '#14B8A6', masterOnly: true },
   { key: 'reports', label: 'Şikayetler', color: '#EF4444', masterOnly: true },
   { key: 'loginissues', label: 'Giriş Sorunları', color: '#F59E0B', masterOnly: true },
@@ -30,8 +32,6 @@ export const SECTIONS = [
   { key: 'history', label: 'Karar Geçmişi', color: '#F59E0B' },
   { key: 'audit', label: 'Denetim Kaydı', color: '#60A5FA', masterOnly: true },
   { key: 'quotas', label: 'Kotalar', color: '#14B8A6', masterOnly: true },
-  { key: 'settings', label: 'Ayarlar', color: '#10B981', masterOnly: true },
-  { key: 'api', label: 'API İzleme', color: '#A855F7', masterOnly: true },
   { key: 'health', label: 'Sistem Sağlığı', color: '#10B981', masterOnly: true },
 ] as const;
 
