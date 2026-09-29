@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loading, EmptyState, StatusMessage } from '../components/ui';
-
+import { UserDetailModal } from '../components/UserDetailModal';
 
 type Tier = 'normal' | 'verified' | 'premium';
 
@@ -14,6 +14,7 @@ type TierUser = {
   isPhoneVerified: boolean;
   isVerified: boolean;
   isEmailVerified: boolean;
+  isBanned: boolean;
 };
 
 type Stats = {
@@ -41,6 +42,8 @@ export function TiersSection() {
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [msg, setMsg] = useState('');
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [banningId, setBanningId] = useState<string | null>(null);
 
   const loadStats = useCallback(async () => {
     const { data, error } = await supabase.rpc('rpc_admin_get_tier_stats');
@@ -69,7 +72,7 @@ export function TiersSection() {
       id: string; display_name: string; email?: string | null;
       is_premium?: boolean | null; premium_until?: number | null;
       is_phone_verified?: boolean | null; is_verified?: boolean | null;
-      is_email_verified?: boolean | null;
+      is_email_verified?: boolean | null; is_banned?: boolean | null;
     };
     const rows: TierUser[] = ((data || []) as TierRow[]).map((u) => ({
       id: u.id,
@@ -80,6 +83,7 @@ export function TiersSection() {
       isPhoneVerified: !!u.is_phone_verified,
       isVerified: !!u.is_verified,
       isEmailVerified: !!u.is_email_verified,
+      isBanned: !!u.is_banned,
     }));
     if (reset) {
       setUsers(rows);
@@ -108,6 +112,38 @@ export function TiersSection() {
   }, [loadStats]);
 
   const onSearch = () => loadUsers(true);
+
+  const toggleBan = async (e: React.MouseEvent, u: TierUser) => {
+    e.stopPropagation();
+    const willBan = !u.isBanned;
+    const confirmPrompt = willBan
+      ? `"${u.displayName || u.email}" kullanıcısını BANLAMAK istediğinize emin misiniz?\n\n• Aktif sohbetleri ve mesajları temizlenir.\n• Oturumu ve yenileme anahtarları kapatılır.\n• Sisteme girişi engellenir.`
+      : `"${u.displayName || u.email}" kullanıcısının banı kaldırılsın mı?`;
+
+    if (!window.confirm(confirmPrompt)) return;
+
+    setBanningId(u.id);
+    setMsg('');
+    const { error } = await supabase.rpc('rpc_admin_set_ban', {
+      p_target_id: u.id,
+      p_banned: willBan,
+    });
+    setBanningId(null);
+
+    if (error) {
+      setMsg('İşlem başarısız: ' + error.message);
+      return;
+    }
+
+    setUsers((prev) =>
+      prev.map((x) => (x.id === u.id ? { ...x, isBanned: willBan } : x))
+    );
+    setMsg(
+      willBan
+        ? `"${u.displayName || u.email}" başarıyla banlandı.`
+        : `"${u.displayName || u.email}" banı kaldırıldı.`
+    );
+  };
 
   if (loading) return <Loading />;
 
@@ -180,28 +216,61 @@ export function TiersSection() {
       ) : (
         <div className="flex flex-col gap-2 max-w-2xl">
           {users.map((u) => (
-            <div key={u.id} className="bg-card border border-white/5 rounded-xl p-3">
-              <p className="font-bold text-sm truncate">{u.email}</p>
-              <p className="text-[11px] text-white/55 truncate mt-0.5">{u.displayName}</p>
-              <div className="flex gap-2 mt-2 text-[10px]">
-                {u.isVerified && (
-                  <span
-                    title={
-                      u.isEmailVerified
-                        ? 'Google/Apple ile giriş — e-posta sağlayıcıda doğrulanmış'
-                        : 'telefon / manuel onay'
-                    }
-                    className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30"
-                  >
-                    Onaylı{u.isEmailVerified && !u.isPhoneVerified ? ' (Google/Apple)' : ''}
-                  </span>
-                )}
-                {u.isPremium && (!u.premiumUntil || u.premiumUntil > Date.now()) && (
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                    Premium
-                    {u.premiumUntil ? ' — ' + new Date(u.premiumUntil).toLocaleDateString('tr-TR') : ''}
-                  </span>
-                )}
+            <div
+              key={u.id}
+              onClick={() => setDetailId(u.id)}
+              className="bg-card border border-white/5 hover:border-white/20 transition-all rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-sm truncate">{u.email}</p>
+                  {u.isBanned && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/40">
+                      BANLI
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-white/55 truncate mt-0.5">{u.displayName}</p>
+                <div className="flex gap-2 mt-2 text-[10px]">
+                  {u.isVerified && (
+                    <span
+                      title={
+                        u.isEmailVerified
+                          ? 'Google/Apple ile giriş — e-posta sağlayıcıda doğrulanmış'
+                          : 'telefon / manuel onay'
+                      }
+                      className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                    >
+                      Onaylı{u.isEmailVerified && !u.isPhoneVerified ? ' (Google/Apple)' : ''}
+                    </span>
+                  )}
+                  {u.isPremium && (!u.premiumUntil || u.premiumUntil > Date.now()) && (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                      Premium
+                      {u.premiumUntil ? ' — ' + new Date(u.premiumUntil).toLocaleDateString('tr-TR') : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={(e) => toggleBan(e, u)}
+                  disabled={banningId === u.id}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors disabled:opacity-50 ${
+                    u.isBanned
+                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                      : 'border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                  }`}
+                >
+                  {banningId === u.id ? '…' : u.isBanned ? 'Banı Kaldır' : 'Banla'}
+                </button>
+                <button
+                  onClick={() => setDetailId(u.id)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs text-white/60 border border-white/10 hover:bg-white/5"
+                >
+                  Detay
+                </button>
               </div>
             </div>
           ))}
@@ -215,6 +284,16 @@ export function TiersSection() {
             </button>
           )}
         </div>
+      )}
+
+      {detailId && (
+        <UserDetailModal
+          userId={detailId}
+          onClose={() => {
+            setDetailId(null);
+            loadUsers(true);
+          }}
+        />
       )}
     </div>
   );
